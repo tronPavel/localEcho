@@ -1,34 +1,60 @@
-using LocalEcho.Infrastructure.Data;
+using LocalEcho.Core.Entities;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<DataMarker> Markers { get; set; } = null!; // null! для nullable reference types.
+    public DbSet<Marker> Markers => Set<Marker>(); // Да, можно сохранять доменный Marker!
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresExtension("postgis"); // Включаем PostGIS.
+        modelBuilder.HasPostgresExtension("postgis");
 
-        modelBuilder.Entity<DataMarker>(entity =>
+        // Конвертер: GeoPoint ↔ NetTopologySuite.Point
+        var geoConverter = new ValueConverter<GeoPoint, Point>(
+            geo => new Point(geo.Longitude, geo.Latitude) { SRID = 4326 },   // C# → БД
+            point => new GeoPoint(point.Y, point.X)                          // БД → C#
+        );
+
+        modelBuilder.Entity<Marker>(entity =>
         {
-            entity.HasKey(e => e.Id); // Primary Key.
-            entity.Property(e => e.Title).IsRequired().HasMaxLength(200); // Обязательное, до 200 символов.
-            entity.Property(e => e.Location).HasColumnType("geometry (point, 4326)").IsRequired(); // Точка, SRID=4326, обязательное.
-            entity.Property(e => e.Category).IsRequired().HasMaxLength(50); // String для читаемости.
-            entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Description).HasMaxLength(500); // До 500 символов.
-            entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.UpdatedAt); // Nullable.
+            entity.HasKey(m => m.Id);
 
-            // Индекс для гео-запросов (для будущего поиска по радиусу).
-            entity.HasIndex(e => e.Location).HasMethod("GIST"); // GIST индекс для PostGIS.
+            entity.Property(m => m.Id)
+                  .ValueGeneratedNever(); // Мы сами задаём Guid в конструкторе
+
+            entity.Property(m => m.Title)
+                  .IsRequired()
+                  .HasMaxLength(200);
+
+            entity.Property(m => m.Description)
+                  .HasMaxLength(500);
+
+            entity.Property(m => m.Category)
+                  .HasConversion<string>()    // enum → "Issue", "Event"...
+                  .IsRequired();
+
+            entity.Property(m => m.Status)
+                  .HasConversion<string>()
+                  .IsRequired();
+
+            // Вот здесь магия — говорим EF, как работать с GeoPoint
+            entity.Property(m => m.Location)
+                  .HasConversion(geoConverter)           // ← КЛЮЧЕВАЯ СТРОКА
+                  .HasColumnType("geometry(Point, 4326)")
+                  .IsRequired();
+
+            entity.Property(m => m.CreatedAt).IsRequired();
+            entity.Property(m => m.UpdatedAt);
+
+            // GIST-индекс для быстрых гео-запросов (в радиусе и т.д.)
+            entity.HasIndex(m => m.Location)
+                  .HasMethod("GIST");
         });
-
-        base.OnModelCreating(modelBuilder); // Безопасность для EF расширений.
     }
 }

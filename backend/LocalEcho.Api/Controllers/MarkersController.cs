@@ -1,5 +1,3 @@
-using LocalEcho.Application.Dtos;
-using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LocalEcho.API.Controllers;
@@ -15,20 +13,21 @@ public class MarkersController : ControllerBase
         _service = service; //?? throw new ArgumentNullException(nameof(service));
     }
 
-    [HttpPost] 
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateMarkerDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState); 
-        await _service.CreateMarkerAsync(dto); 
-        return Ok(); 
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var markerId = await _service.CreateMarkerAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = markerId }, null);
     }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+        => Ok(await _service.GetByIdAsync(id));
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
-    {
-        var markers = await _service.GetAllMarkersAsync();
-        return Ok(markers);
-    }
-
-    // Аналогично для GetById, UpdateStatus (PUT/PATCH).
+        => Ok(await _service.GetAllAsync());
+   
 }

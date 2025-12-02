@@ -1,56 +1,43 @@
-using LocalEcho.Application.Interfaces;
-using LocalEcho.Application.Services;
-using LocalEcho.Core.Interfaces;
 using LocalEcho.Infrastructure.Data;
 using LocalEcho.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite;
-using NetTopologySuite.Geometries;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Контроллеры + Swagger
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+        opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())); // enum как строки
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// БД + PostGIS
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        npgsqlOptions =>
-        {
-            npgsqlOptions.UseNetTopologySuite();
-        }
+        npgsql => npgsql.UseNetTopologySuite() // ← обязательно!
     ));
 
-builder.Services.AddSingleton<GeometryFactory>(NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326));
-
+// DI
 builder.Services.AddScoped<IMarkerRepository, MarkerRepository>();
 builder.Services.AddScoped<IMarkerService, MarkerService>();
-
-builder.Services.AddAutoMapper(typeof(Program));
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    /*using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        context.Database.Migrate();
-    }*/
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate(); 
-}
-
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Автоматически применяем миграции при старте (удобно на разработке)
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

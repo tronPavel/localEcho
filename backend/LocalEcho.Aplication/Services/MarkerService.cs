@@ -1,28 +1,26 @@
-using LocalEcho.Application.Dtos;
-using LocalEcho.Application.Interfaces;
+using LocalEcho.Aplication.Dtos;
 using LocalEcho.Core.Entities;
-using LocalEcho.Core.Interfaces;
 
-namespace LocalEcho.Application.Services;
 
 public class MarkerService : IMarkerService
 {
-    private readonly IMarkerRepository _repository; 
+    private readonly IMarkerRepository _repository;
 
     public MarkerService(IMarkerRepository repository)
-    {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-    }
+        => _repository = repository ?? throw new ArgumentNullException(nameof(repository));
 
-    public async Task CreateMarkerAsync(CreateMarkerDto dto)
+    public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
     {
         var location = new GeoPoint(dto.Latitude, dto.Longitude);
-        var marker = new Marker(dto.Title, location, dto.Category, dto.Description);
+        var marker = Marker.Create(dto.Title, location, dto.Category, dto.Description);
+
         await _repository.AddAsync(marker);
         await _repository.SaveChangesAsync();
+
+        return marker.Id;
     }
 
-    public async Task<IEnumerable<MarkerDto>> GetAllMarkersAsync()
+    public async Task<IEnumerable<MarkerDto>> GetAllAsync()
     {
         var markers = await _repository.GetAllAsync();
         return markers.Select(m => new MarkerDto(
@@ -35,29 +33,40 @@ public class MarkerService : IMarkerService
             m.Status,
             m.CreatedAt,
             m.UpdatedAt
-        ));
+        )).ToArray();
     }
 
-    /*public async Task<MarkerDto> GetMarkerByIdAsync(Guid id)
+    public async Task<MarkerDto> GetByIdAsync(Guid id)
     {
-        var marker = await _repository.GetByIdAsync(id);
-        if (marker == null) throw new KeyNotFoundException("Marker not found");
-        return new MarkerDto(marker.Id, marker.Title, marker.Location.Latitude, marker.Location.Longitude, marker.Description, marker.Category, marker.Status, marker.CreatedAt, marker.UpdatedAt);
+        var marker = await _repository.GetByIdAsync(id)
+                     ?? throw new KeyNotFoundException($"Marker {id} not found");
+
+        return new MarkerDto(
+            marker.Id, marker.Title,
+            marker.Location.Latitude, marker.Location.Longitude,
+            marker.Description, marker.Category, marker.Status,
+            marker.CreatedAt, marker.UpdatedAt);
     }
 
-    public async Task UpdateMarkerStatusAsync(Guid id, MarkerStatus status)
+    // В будущем: добавить Guid currentUserId в сигнатуру или брать из HttpContext
+    public async Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto)
     {
-        var marker = await _repository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Marker not found");
-        marker.ChangeStatus(status);
-        await _repository.UpdateAsync(marker);
+        var marker = await _repository.GetByIdAsync(id)
+                     ?? throw new KeyNotFoundException();
+
+        marker.UpdateDescription(dto.Description);
+        _repository.Update(marker);
         await _repository.SaveChangesAsync();
     }
 
-    public async Task UpdateMarkerDescriptionAsync(Guid id, string? description)
+    // В будущем: проверка прав
+    public async Task ChangeStatusAsync(Guid id, MarkerStatus newStatus)
     {
-        var marker = await _repository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Marker not found");
-        marker.UpdateDescription(description);
-        await _repository.UpdateAsync(marker);
+        var marker = await _repository.GetByIdAsync(id)
+                     ?? throw new KeyNotFoundException();
+
+        marker.ChangeStatus(newStatus);
+        _repository.Update(marker);
         await _repository.SaveChangesAsync();
-    }*/
+    }
 }

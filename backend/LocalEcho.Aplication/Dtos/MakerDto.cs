@@ -1,5 +1,3 @@
-namespace LocalEcho.Application.Dtos;
-
 using LocalEcho.Core.Entities;
 
 public record MarkerDto(
@@ -10,5 +8,6 @@ public record MarkerDto(
     string? Description,
     MarkerCategory Category,
     MarkerStatus Status,
+   // Guid CreatorId,
     DateTime CreatedAt,
     DateTime? UpdatedAt);
