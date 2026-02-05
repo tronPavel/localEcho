@@ -22,7 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\LocalEcho.Aplication\LocalEcho.Aplication.csproj" />
+        <ProjectReference Include="..\LocalEcho.Application\LocalEcho.Application.csproj" />
         <ProjectReference Include="..\LocalEcho.Infrastructure\LocalEcho.Infrastructure.csproj" />
     </ItemGroup>
 

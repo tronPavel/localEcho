@@ -1,5 +1,6 @@
 using LocalEcho.Core.Entities;
 using LocalEcho.Infrastructure.Data;
+using LocalEcho.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalEcho.Infrastructure.Repositories;

@@ -8,6 +8,6 @@ public record MarkerDto(
     string? Description,
     MarkerCategory Category,
     MarkerStatus Status,
-   // Guid CreatorId,
+    Guid CreatorId,
     DateTime CreatedAt,
     DateTime? UpdatedAt);

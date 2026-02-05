@@ -1,3 +1,3 @@
-namespace LocalEcho.Aplication.Dtos;
+namespace LocalEcho.Application.Dtos;
 
 public record UpdateDescriptionDto(string? Description);
