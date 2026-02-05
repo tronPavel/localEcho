@@ -8,60 +8,48 @@ public class Marker
     public string? Description { get; private set; }
     public MarkerCategory Category { get; private set; }
     public MarkerStatus Status { get; private set; }
-    
-    // public Guid CreatorId { get; private set; }
-
+    public Guid CreatedByUserId { get; private set; }
+    public Guid DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
     private Marker() { }
 
-    private Marker(string title, GeoPoint location, MarkerCategory category, string? description)
+    private Marker(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
         Location = location;
         Category = category;
-        Description = description?.Length > 500 
-            ? throw new ArgumentException("Description too long", nameof(description))
-            : description?.Trim();
+        CreatedByUserId = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("Creator required");
+        DistrictId = districtId != Guid.Empty ? districtId : throw new ArgumentException("District required");
+        Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
         Status = MarkerStatus.Active;
         CreatedAt = DateTime.UtcNow;
     }
 
-    public static Marker Create(string title, GeoPoint location, MarkerCategory category, string? description = null)
+    public static Marker Create(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description = null)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new ArgumentException("Title is required", nameof(title));
-        if (location is null) throw new ArgumentNullException(nameof(location));
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title required");
+        if (location == null) throw new ArgumentNullException(nameof(location));
 
-        return new Marker(title, location, category, description);
+        return new Marker(title, location, category, createdByUserId, districtId, description);
     }
 
-    // todo параметр Guid currentUserId + проверка прав
     public void UpdateDescription(string? newDescription)
     {
         newDescription = newDescription?.Trim();
-        if (newDescription?.Length > 500)
-            throw new ArgumentException("Description cannot exceed 500 characters");
-
+        if (newDescription?.Length > 500) throw new ArgumentException("Description too long");
         if (Description == newDescription) return;
-
         Description = newDescription;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    // todo параметр Guid currentUserId + проверка прав (или отдельно для модераторов)
     public void ChangeStatus(MarkerStatus newStatus)
     {
-        if (!Enum.IsDefined(newStatus))
-            throw new ArgumentException("Invalid status", nameof(newStatus));
-
-        if (Status == MarkerStatus.Resolved && newStatus == MarkerStatus.Active)
-            throw new InvalidOperationException("Cannot reopen a resolved marker");
-
+        if (!Enum.IsDefined(newStatus)) throw new ArgumentException("Invalid status");
+        if (Status == MarkerStatus.Resolved && newStatus == MarkerStatus.Active) throw new InvalidOperationException("Cannot reopen");
         if (Status == newStatus) return;
-
         Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
     }
