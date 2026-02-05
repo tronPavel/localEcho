@@ -59,5 +59,10 @@ app.UseCors("AllowAllLocal");
 app.UseHttpsRedirection();
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    await SeedData.InitializeAsync(scope.ServiceProvider);
+}
+
 app.Run();
 
