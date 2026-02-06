@@ -2,13 +2,25 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LocalEcho.Application.Dtos;
 
-public record RegisterDto(
-    [Required] [EmailAddress] string Email,
-    [Required] [StringLength(100, MinimumLength = 6)] string Password,
-    [Required] [property: Compare("Password")] string ConfirmPassword,
-    [Required] string Name,
-    [Required] Guid DistrictId = default,
-    string? HomeAddress = null,
-    bool RequestVerification = false,
-    string? VerificationNote = null
-);
+public record RegisterDto
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; init; } = string.Empty;
+
+    [Required]
+    [StringLength(100, MinimumLength = 6)]
+    public string Password { get; init; } = string.Empty;
+
+    [Required]
+    [Compare("Password", ErrorMessage = "Пароли не совпадают")]
+    public string ConfirmPassword { get; init; } = string.Empty;
+
+    [Required]
+    public string Name { get; init; } = string.Empty; 
+
+    [Required]
+    public Guid DistrictId { get; init; }
+
+    public string? HomeAddress { get; init; }
+}

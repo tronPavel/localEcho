@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalEcho.Infrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalEcho.Tests", "LocalEcho.Tests\LocalEcho.Tests.csproj", "{BE5D28E5-7EAE-48D8-AA84-DF684E1D99AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalEcho.Aplication", "LocalEcho.Aplication\LocalEcho.Aplication.csproj", "{A1149E8B-A0EF-482E-81E9-1B4A36676234}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalEcho.Application", "LocalEcho.Application\LocalEcho.Application.csproj", "{A1149E8B-A0EF-482E-81E9-1B4A36676234}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
