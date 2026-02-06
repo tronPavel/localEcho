@@ -83,9 +83,16 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.Property<Guid>("DistrictId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.Property<Point>("Location")
                         .IsRequired()
                         .HasColumnType("geometry(Point, 4326)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -106,6 +113,24 @@ namespace LocalEcho.Infrastructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Location"), "GIST");
 
                     b.ToTable("Markers");
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
+                {
+                    b.Property<Guid>("MarkerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsUpvote")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("MarkerId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Votes");
                 });
 
             modelBuilder.Entity("LocalEcho.Infrastructure.Identity.ApplicationRole", b =>
@@ -336,6 +361,21 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
+                {
+                    b.HasOne("LocalEcho.Core.Entities.Marker", null)
+                        .WithMany()
+                        .HasForeignKey("MarkerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

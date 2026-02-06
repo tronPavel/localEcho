@@ -11,6 +11,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 {
     public DbSet<Marker> Markers => Set<Marker>();
     public DbSet<District> Districts => Set<District>();
+    public DbSet<Vote> Votes => Set<Vote>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -36,6 +37,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(m => m.Location).HasConversion(geoConverter).HasColumnType("geometry(Point, 4326)").IsRequired();
             entity.Property(m => m.CreatedAt).IsRequired();
             entity.Property(m => m.UpdatedAt);
+            entity.Property(m => m.Rating).IsRequired();
+            entity.Property(m => m.ImageUrl).HasMaxLength(2048);
             entity.HasIndex(m => m.Location).HasMethod("GIST");
         });
         
@@ -49,6 +52,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(d => d.IconColor).HasMaxLength(7);
             entity.Property(d => d.IsActive).IsRequired();
             entity.Property(d => d.CreatedAt).IsRequired();
+        });
+        
+        modelBuilder.Entity<Vote>(entity =>
+        {
+            entity.HasKey(v => new { v.MarkerId, v.UserId }); // Составной ключ
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(v => v.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Marker>().WithMany().HasForeignKey(v => v.MarkerId).OnDelete(DeleteBehavior.Cascade);
         });
         
         modelBuilder.Entity<ApplicationUser>(entity =>

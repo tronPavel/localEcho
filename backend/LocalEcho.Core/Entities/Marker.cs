@@ -12,10 +12,14 @@ public class Marker
     public Guid DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+    
+    public string? ImageUrl { get; private set; }
+    
+    public int Rating { get; private set; } = 0;
 
     private Marker() { }
 
-    private Marker(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description)
+    private Marker(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description, string? imageUrl)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
@@ -26,14 +30,16 @@ public class Marker
         Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
         Status = MarkerStatus.Active;
         CreatedAt = DateTime.UtcNow;
+        ImageUrl = imageUrl;
+        Rating = 0;
     }
 
-    public static Marker Create(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description = null)
+    public static Marker Create(string title, GeoPoint location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description = null, string? imageUrl = null)
     {
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title required");
         if (location == null) throw new ArgumentNullException(nameof(location));
 
-        return new Marker(title, location, category, createdByUserId, districtId, description);
+        return new Marker(title, location, category, createdByUserId, districtId, description, imageUrl);
     }
 
     public void UpdateDescription(string? newDescription)
@@ -43,6 +49,11 @@ public class Marker
         if (Description == newDescription) return;
         Description = newDescription;
         UpdatedAt = DateTime.UtcNow;
+    }
+    
+    public void UpdateRating(int newRating)
+    {
+        Rating = newRating;
     }
 
     public void ChangeStatus(MarkerStatus newStatus)
