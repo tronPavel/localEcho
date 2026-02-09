@@ -9,4 +9,5 @@ public interface IMarkerService
     Task<MarkerDto> GetByIdAsync(Guid id);
     Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto);
     Task ChangeStatusAsync(Guid id, MarkerStatus status);
+    Task VoteAsync(Guid markerId, VoteDto dto);
 }

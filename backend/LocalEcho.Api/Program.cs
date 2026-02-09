@@ -11,8 +11,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models; 
 using System.Text;
 using System.Text.Json.Serialization;
+using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Infrastructure.Data;
-using LocalEcho.Infrastructure.Identity;
+using LocalEcho.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,6 +110,8 @@ builder.Services.AddScoped<IMarkerRepository, MarkerRepository>();
 builder.Services.AddScoped<IDistrictRepository, DistrictRepository>();
 builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFileService, FileService>();
+
 
 builder.Services.AddAuthorization(options =>
 {

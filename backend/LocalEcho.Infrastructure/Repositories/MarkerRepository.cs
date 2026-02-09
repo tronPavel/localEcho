@@ -26,4 +26,21 @@ public class MarkerRepository : IMarkerRepository
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);
+    
+    public async Task<Vote?> GetVoteAsync(Guid markerId, Guid userId)
+        => await _context.Votes.FindAsync(markerId, userId);
+
+    public async Task AddVoteAsync(Vote vote)
+        => await _context.Votes.AddAsync(vote);
+
+    public void RemoveVote(Vote vote)
+        => _context.Votes.Remove(vote);
+
+    public async Task<int> CalculateRatingAsync(Guid markerId)
+    {
+        var up = await _context.Votes.CountAsync(v => v.MarkerId == markerId && v.IsUpvote);
+        var down = await _context.Votes.CountAsync(v => v.MarkerId == markerId && !v.IsUpvote);
+        return up - down;
+    }
+// обновить GetAllAsync чтобы он мог подгружать голоса если нужно лили мы будем делать это отдельным запросом в сервисе.
 }

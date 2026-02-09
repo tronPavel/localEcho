@@ -1,5 +1,5 @@
 using LocalEcho.Core.Entities;
-using LocalEcho.Infrastructure.Identity;
+using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

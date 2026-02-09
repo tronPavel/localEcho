@@ -1,5 +1,5 @@
 using LocalEcho.Core.Entities;
-using LocalEcho.Infrastructure.Identity;
+using LocalEcho.Core.Entities.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;

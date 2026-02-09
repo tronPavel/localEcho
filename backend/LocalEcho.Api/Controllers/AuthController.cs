@@ -11,12 +11,13 @@ namespace LocalEcho.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-    private readonly ILogger<AuthController> _logger;
+    private readonly IFileService _fileService;
+    
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IFileService fileService)
     {
         _authService = authService;
-        _logger = logger;
+        _fileService = fileService;
     }
 
     [HttpPost("register")]
@@ -30,7 +31,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Registration error");
             return BadRequest(new { success = false, error = ex.Message });
         }
     }
@@ -46,7 +46,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Login error");
             return Unauthorized(new { success = false, error = ex.Message });
         }
     }
@@ -62,7 +61,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Refresh error");
             return Unauthorized(new { success = false, error = ex.Message });
         }
     }
@@ -94,7 +92,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Profile error");
             return BadRequest(new { success = false, error = ex.Message });
         }
     }
@@ -114,7 +111,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Update profile error");
             return BadRequest(new { success = false, error = ex.Message });
         }
     }
@@ -134,7 +130,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Change district error");
             return BadRequest(new { success = false, error = ex.Message });
         }
     }
@@ -150,8 +145,44 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Get districts error");
             return StatusCode(500, new { success = false, error = "Server error" });
+        }
+    }
+    [HttpPost("avatar")]
+    [Authorize]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        // 1. Простая валидация (только картинки)
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+            return BadRequest("Only image files are allowed");
+
+        try
+        {
+            // 2. Получаем ID текущего пользователя
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+            var userId = Guid.Parse(userIdStr);
+
+            // 3. Сохраняем файл через сервис (в папку avatars для порядка)
+            using var stream = file.OpenReadStream();
+            var avatarUrl = await _fileService.SaveFileAsync(stream, file.FileName, "avatars");
+
+            // 4. Обновляем пользователя через AuthService
+            // Нам нужно добавить метод UpdateAvatarAsync в IAuthService
+            var success = await _authService.UpdateAvatarAsync(userId, avatarUrl);
+
+            if (!success) return BadRequest("Failed to update user profile");
+
+            return Ok(new { success = true, avatarUrl = avatarUrl });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
         }
     }
 }

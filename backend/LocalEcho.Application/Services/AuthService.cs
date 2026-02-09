@@ -4,9 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Application.Dtos;
-using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Interfaces;
-using LocalEcho.Infrastructure.Identity;
+using LocalEcho.Core.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -224,7 +223,6 @@ public class AuthService : IAuthService
         if (user == null) return false;
 
         if (dto.Name != null) user.Name = dto.Name; 
-        if (dto.AvatarUrl != null) user.AvatarUrl = dto.AvatarUrl;
         if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
         
         var result = await _userManager.UpdateAsync(user);
@@ -256,4 +254,15 @@ public class AuthService : IAuthService
     }
 
     private int GetTokenLifetime() => _configuration.GetValue<int>("JwtSettings:TokenLifetimeMinutes", 60);
+    
+    public async Task<bool> UpdateAvatarAsync(Guid userId, string avatarUrl)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) return false;
+
+        user.AvatarUrl = avatarUrl;
+    
+        var result = await _userManager.UpdateAsync(user);
+        return result.Succeeded;
+    }
 }

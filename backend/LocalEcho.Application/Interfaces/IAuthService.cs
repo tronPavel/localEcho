@@ -12,4 +12,5 @@ public interface IAuthService
     Task<bool> UpdateProfileAsync(Guid userId, UpdateProfileDto dto);
     Task<bool> ChangeDistrictAsync(Guid userId, ChangeDistrictDto dto);
     Task<IEnumerable<object>> GetAllDistrictsAsync();
+    Task<bool> UpdateAvatarAsync(Guid userId, string avatarUrl);
 }

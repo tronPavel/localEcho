@@ -15,7 +15,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\LocalEcho.Core\LocalEcho.Core.csproj" />
-        <ProjectReference Include="..\LocalEcho.Infrastructure\LocalEcho.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>

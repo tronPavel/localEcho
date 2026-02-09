@@ -1,3 +1,4 @@
+using LocalEcho.Application.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +26,21 @@ public class MarkersController : ControllerBase
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
-        => Ok(await _service.GetByIdAsync(id));
+    {
+        try {
+            return Ok(await _service.GetByIdAsync(id));
+        } catch (KeyNotFoundException) {
+            return NotFound();
+        }
+    }
+
+    [HttpPost("{id:guid}/vote")]
+    [Authorize]
+    public async Task<IActionResult> Vote(Guid id, [FromBody] VoteDto dto)
+    {
+        await _service.VoteAsync(id, dto);
+        return Ok(new { message = "Voted successfully" });
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()

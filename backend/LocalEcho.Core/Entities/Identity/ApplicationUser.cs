@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace LocalEcho.Infrastructure.Identity;
+namespace LocalEcho.Core.Entities.Identity;
 
 public class ApplicationUser : IdentityUser<Guid>
 {

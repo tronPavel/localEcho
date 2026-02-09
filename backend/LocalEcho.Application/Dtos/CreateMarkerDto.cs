@@ -5,4 +5,5 @@ public record CreateMarkerDto(
     double Latitude,
     double Longitude, 
     MarkerCategory Category, 
-    string? Description = null);
+    string? Description = null,
+    string? ImageUrl = null);
