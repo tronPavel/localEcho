@@ -43,6 +43,9 @@ public class MarkersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-        => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetFiltered([FromQuery] GetMarkersQueryParams query)
+    {
+        var markers = await _service.GetFilteredMarkersAsync(query);
+        return Ok(markers);
+    }
 }

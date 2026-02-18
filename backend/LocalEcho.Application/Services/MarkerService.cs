@@ -1,6 +1,7 @@
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Entities;
+using LocalEcho.Core.Models;
 
 namespace LocalEcho.Application.Services;
 
@@ -39,33 +40,6 @@ public class MarkerService : IMarkerService
         await _repository.SaveChangesAsync();
 
         return marker.Id;
-    }
-
-    public async Task<IEnumerable<MarkerDto>> GetAllAsync()
-    {
-        var markers = await _repository.GetAllAsync();
-        var currentUserId = _userContext.IsAuthenticated ? _userContext.UserId : (Guid?)null;
-    
-        // ВАЖНО: Это не супер-эффективно (N+1), для продакшена нужен Dapper или join query.
-        // Для учебного проекта пойдет. 
-        var dtos = new List<MarkerDto>();
-
-        foreach (var m in markers)
-        {
-            int userVote = 0;
-            if (currentUserId.HasValue)
-            {
-                var vote = await _repository.GetVoteAsync(m.Id, currentUserId.Value);
-                if (vote != null) userVote = vote.IsUpvote ? 1 : -1;
-            }
-
-            dtos.Add(new MarkerDto(
-                m.Id, m.Title, m.Location.Latitude, m.Location.Longitude, 
-                m.Description, m.ImageUrl, m.Category, m.Status, 
-                m.CreatedByUserId, m.Rating, userVote, m.CreatedAt, m.UpdatedAt
-            ));
-        }
-        return dtos;
     }
 
     public async Task<MarkerDto> GetByIdAsync(Guid id)
@@ -152,5 +126,45 @@ public class MarkerService : IMarkerService
         marker.UpdateRating(newRating);
         _repository.Update(marker);
         await _repository.SaveChangesAsync();
+    }
+    public async Task<IEnumerable<MarkerDto>> GetFilteredMarkersAsync(GetMarkersQueryParams queryParams)
+    {
+        MarkerCategory? category = null;
+        if (!string.IsNullOrEmpty(queryParams.Category) && Enum.TryParse<MarkerCategory>(queryParams.Category, out var c))
+            category = c;
+
+        MarkerStatus? status = null;
+        if (!string.IsNullOrEmpty(queryParams.Status) && Enum.TryParse<MarkerStatus>(queryParams.Status, out var s))
+            status = s;
+
+        var filter = new MarkerFilter
+        {
+            Category = category,
+            Status = status,
+            MinLat = queryParams.MinLat,
+            MaxLat = queryParams.MaxLat,
+            MinLng = queryParams.MinLng,
+            MaxLng = queryParams.MaxLng
+        };
+
+        var currentUserId = _userContext.IsAuthenticated ? _userContext.UserId : (Guid?)null;
+
+        var markersWithVotes = await _repository.GetFilteredAsync(filter, currentUserId);
+
+        return markersWithVotes.Select(item => new MarkerDto(
+            item.Marker.Id,
+            item.Marker.Title,
+            item.Marker.Location.Latitude,
+            item.Marker.Location.Longitude,
+            item.Marker.Description,
+            item.Marker.ImageUrl,
+            item.Marker.Category,
+            item.Marker.Status,
+            item.Marker.CreatedByUserId,
+            item.Marker.Rating,
+            item.UserVote, 
+            item.Marker.CreatedAt,
+            item.Marker.UpdatedAt
+        ));
     }
 }
