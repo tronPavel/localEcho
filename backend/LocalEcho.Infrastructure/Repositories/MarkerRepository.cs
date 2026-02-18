@@ -1,8 +1,8 @@
 using LocalEcho.Core.Entities;
 using LocalEcho.Core.Models;
-using LocalEcho.Infrastructure.Data;
 using LocalEcho.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Infrastructure.Repositories;
 
@@ -15,10 +15,6 @@ public class MarkerRepository : IMarkerRepository
 
     public async Task<Marker?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Markers.FirstOrDefaultAsync(m => m.Id == id, ct);
-
-    //public async Task<IEnumerable<Marker>> GetAllAsync(CancellationToken ct = default)
-    //  => await _context.Markers.AsNoTracking().ToListAsync(ct);
-    // обновить GetAllAsync чтобы он мог подгружать голоса если нужно лили мы будем делать это отдельным запросом в сервисе.
 
     public async Task AddAsync(Marker marker, CancellationToken ct = default)
         => await _context.Markers.AddAsync(marker, ct);
@@ -44,7 +40,11 @@ public class MarkerRepository : IMarkerRepository
         var down = await _context.Votes.CountAsync(v => v.MarkerId == markerId && !v.IsUpvote);
         return up - down;
     }
-    public async Task<IEnumerable<MarkerWithVote>> GetFilteredAsync(MarkerFilter filter, Guid? currentUserId, CancellationToken ct = default)
+
+    public async Task<IEnumerable<MarkerWithVote>> GetFilteredAsync(
+        MarkerFilter filter, 
+        Guid? currentUserId, 
+        CancellationToken ct = default)
     {
         var query = _context.Markers.AsNoTracking();
 
@@ -57,20 +57,20 @@ public class MarkerRepository : IMarkerRepository
         if (filter.MinLat.HasValue && filter.MaxLat.HasValue && 
             filter.MinLng.HasValue && filter.MaxLng.HasValue)
         {
-            query = query.Where(m => 
-                m.Location.Latitude >= filter.MinLat.Value &&
-                m.Location.Latitude <= filter.MaxLat.Value &&
-                m.Location.Longitude >= filter.MinLng.Value &&
-                m.Location.Longitude <= filter.MaxLng.Value);
+            query = query.Where(m =>
+                EF.Property<Point>(m, "Location").X >= filter.MinLng.Value &&   // Longitude
+                EF.Property<Point>(m, "Location").X <= filter.MaxLng.Value &&
+                EF.Property<Point>(m, "Location").Y >= filter.MinLat.Value &&   // Latitude
+                EF.Property<Point>(m, "Location").Y <= filter.MaxLat.Value);
         }
 
         return await query.Select(m => new MarkerWithVote(
             m,
-            currentUserId.HasValue 
+            currentUserId.HasValue
                 ? _context.Votes
-                    .Where(v => v.MarkerId == m.Id && v.UserId == currentUserId)
+                    .Where(v => v.MarkerId == m.Id && v.UserId == currentUserId.Value)
                     .Select(v => v.IsUpvote ? 1 : -1)
-                    .FirstOrDefault() 
+                    .FirstOrDefault()
                 : 0
         )).ToListAsync(ct);
     }

@@ -21,7 +21,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
 
         modelBuilder.HasPostgresExtension("postgis");
 
-        // Конвертер для GeoPoint
         var geoConverter = new ValueConverter<GeoPoint, Point>(
             geo => new Point(geo.Longitude, geo.Latitude) { SRID = 4326 },
             point => new GeoPoint(point.Y, point.X)
