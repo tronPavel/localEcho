@@ -1,7 +1,9 @@
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Entities;
+using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Core.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace LocalEcho.Application.Services;
 
@@ -9,11 +11,13 @@ public class MarkerService : IMarkerService
 {
     private readonly IMarkerRepository _repository;
     private readonly IUserContext _userContext;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public MarkerService(IMarkerRepository repository, IUserContext userContext)
+    public MarkerService(IMarkerRepository repository, IUserContext userContext, UserManager<ApplicationUser> userManager)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
     }
 
     public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
@@ -92,15 +96,17 @@ public class MarkerService : IMarkerService
         _repository.Update(marker);
         await _repository.SaveChangesAsync();
     }
-    public async Task VoteAsync(Guid markerId, VoteDto dto)
+   public async Task VoteAsync(Guid markerId, VoteDto dto)
     {
         if (!_userContext.IsAuthenticated) throw new UnauthorizedAccessException();
-        var userId = _userContext.UserId;
+        var voterId = _userContext.UserId;
 
         var marker = await _repository.GetByIdAsync(markerId) 
                      ?? throw new KeyNotFoundException("Marker not found");
 
-        var existingVote = await _repository.GetVoteAsync(markerId, userId);
+        var existingVote = await _repository.GetVoteAsync(markerId, voterId);
+
+        bool wasUpvote = existingVote?.IsUpvote ?? false;
 
         if (existingVote != null)
         {
@@ -111,16 +117,31 @@ public class MarkerService : IMarkerService
             else
             {
                 existingVote.ChangeType(dto.IsUpvote);
-                // _repository.UpdateVote(existingVote); // EF Core сам отследит изменения, но можно явно
             }
         }
         else
         {
-            var newVote = new Vote(markerId, userId, dto.IsUpvote);
+            var newVote = new Vote(markerId, voterId, dto.IsUpvote);
             await _repository.AddVoteAsync(newVote);
         }
 
-        await _repository.SaveChangesAsync();
+        await _repository.SaveChangesAsync();   
+
+        bool isNowUpvote = existingVote?.IsUpvote == dto.IsUpvote 
+            ? false                                     
+            : (existingVote == null ? dto.IsUpvote : dto.IsUpvote); 
+
+        int delta = (isNowUpvote ? 1 : 0) - (wasUpvote ? 1 : 0);
+
+        if (delta != 0)
+        {
+            var creator = await _userManager.FindByIdAsync(marker.CreatedByUserId.ToString());
+            if (creator != null)
+            {
+                creator.Points += delta;          
+                await _userManager.UpdateAsync(creator);
+            }
+        }
 
         var newRating = await _repository.CalculateRatingAsync(markerId);
         marker.UpdateRating(newRating);
