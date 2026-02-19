@@ -1,3 +1,5 @@
+using LocalEcho.Core.Entities.Identity;
+
 namespace LocalEcho.Core.Entities;
 
 public class Marker
@@ -16,6 +18,8 @@ public class Marker
     public string? ImageUrl { get; private set; }
     
     public int Rating { get; private set; } = 0;
+    
+    public ApplicationUser? Creator { get; private set; } //навигационное
 
     private Marker() { }
 

@@ -39,6 +39,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(m => m.Rating).IsRequired();
             entity.Property(m => m.ImageUrl).HasMaxLength(2048);
             entity.HasIndex(m => m.Location).HasMethod("GIST");
+            entity.HasOne(m => m.Creator)
+                .WithMany() // У юзера может быть много маркеров
+                .HasForeignKey(m => m.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict); // Или Cascade, если хотите удалять метки при удалении юзера
         });
         
         modelBuilder.Entity<District>(entity =>

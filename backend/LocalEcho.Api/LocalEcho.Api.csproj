@@ -25,4 +25,8 @@
         <ProjectReference Include="..\LocalEcho.Infrastructure\LocalEcho.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Resources\SeedImages\" />
+    </ItemGroup>
+
 </Project>

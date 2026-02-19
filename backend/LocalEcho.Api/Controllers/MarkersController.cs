@@ -1,4 +1,5 @@
 using LocalEcho.Application.Dtos;
+using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,11 +28,22 @@ public class MarkersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try {
-            return Ok(await _service.GetByIdAsync(id));
-        } catch (KeyNotFoundException) {
+        try 
+        {
+            var detailDto = await _service.GetMarkerDetailsAsync(id);
+            return Ok(detailDto);
+        } 
+        catch (KeyNotFoundException) 
+        {
             return NotFound();
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetFiltered([FromQuery] GetMarkersQueryParams query)
+    {
+        var markers = await _service.GetMapMarkersAsync(query);
+        return Ok(markers);
     }
 
     [HttpPost("{id:guid}/vote")]
@@ -40,12 +52,5 @@ public class MarkersController : ControllerBase
     {
         await _service.VoteAsync(id, dto);
         return Ok(new { message = "Voted successfully" });
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetFiltered([FromQuery] GetMarkersQueryParams query)
-    {
-        var markers = await _service.GetFilteredMarkersAsync(query);
-        return Ok(markers);
     }
 }
