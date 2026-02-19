@@ -9,7 +9,7 @@ namespace LocalEcho.API.Controllers;
 
 [ApiController]
 [Route("api/leaderboard")]
-[AllowAnonymous]   
+[AllowAnonymous]
 public class LeaderboardController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -18,7 +18,7 @@ public class LeaderboardController : ControllerBase
     {
         _userManager = userManager;
     }
-    
+
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] Guid? districtId)
     {
@@ -32,11 +32,11 @@ public class LeaderboardController : ControllerBase
             .Take(10)
             .Select(u => new LeaderboardEntryDto(
                 u.Id,
-                u.UserName ?? u.Email ?? "Anonymous",
+                u.Name ?? u.UserName ?? u.Email ?? "Anonymous",   
                 u.Points
             ))
             .ToListAsync();
 
-        return Ok(new { success = true, data = leaderboard });
+        return Ok(leaderboard);   
     }
 }
