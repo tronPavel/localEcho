@@ -1,9 +1,6 @@
-using LocalEcho.Application.Dtos;
-using LocalEcho.Core.Entities.Identity;
+using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LocalEcho.API.Controllers;
 
@@ -12,31 +9,17 @@ namespace LocalEcho.API.Controllers;
 [AllowAnonymous]
 public class LeaderboardController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILeaderboardService _service;
 
-    public LeaderboardController(UserManager<ApplicationUser> userManager)
+    public LeaderboardController(ILeaderboardService service)
     {
-        _userManager = userManager;
+        _service = service;
     }
 
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] Guid? districtId)
     {
-        var query = _userManager.Users.AsNoTracking();
-
-        if (districtId.HasValue)
-            query = query.Where(u => u.DistrictId == districtId.Value);
-
-        var leaderboard = await query
-            .OrderByDescending(u => u.Points)
-            .Take(10)
-            .Select(u => new LeaderboardEntryDto(
-                u.Id,
-                u.Name ?? u.UserName ?? u.Email ?? "Anonymous",   
-                u.Points
-            ))
-            .ToListAsync();
-
-        return Ok(leaderboard);   
+        var leaderboard = await _service.GetTopUsersAsync(districtId);
+        return Ok(leaderboard);
     }
 }

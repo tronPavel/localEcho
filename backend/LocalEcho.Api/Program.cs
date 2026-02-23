@@ -105,13 +105,19 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUserContext, UserContext>();
+
 builder.Services.AddScoped<IMarkerRepository, MarkerRepository>();
 builder.Services.AddScoped<IDistrictRepository, DistrictRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>(); // <-- Новый
+
+builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddScoped<IMarkerService, MarkerService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileService, FileService>();
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>(); // <-- Новый
+builder.Services.AddScoped<IDistrictService, DistrictService>(); // <-- Новый
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>(); // <-- Новый
 
 builder.Services.AddAuthorization(options =>
 {

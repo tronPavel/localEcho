@@ -1,0 +1,15 @@
+namespace LocalEcho.Application.Dtos;
+
+public record UserProfileDto(
+    Guid Id,
+    string Email,
+    string Name,
+    string? AvatarUrl,
+    string? HomeAddress,
+    bool IsVerified,
+    int Points,
+    DateTime LastSeen,
+    DateTime CreatedAt,
+    DistrictDto? District,
+    IList<string> Roles
+);
