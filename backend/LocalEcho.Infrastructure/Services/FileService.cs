@@ -1,6 +1,5 @@
+using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Hosting;
-using  LocalEcho.Application.Interfaces;
-
 
 namespace LocalEcho.Infrastructure.Services;
 
@@ -13,26 +12,30 @@ public class FileService : IFileService
         _env = env;
     }
 
-    public async Task<string> SaveFileAsync(Stream fileStream, string fileName, string folderName)
+    public async Task<string> SaveFileAsync(Stream fileStream, string originalFileName, string folderName)
     {
         if (fileStream == null || fileStream.Length == 0)
             throw new ArgumentException("File stream is empty");
 
-        // Путь к папке wwwroot/folderName
-        var uploadPath = Path.Combine(_env.WebRootPath, folderName);
+        var webRootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         
+        var uploadPath = Path.Combine(webRootPath, folderName);
+        
+
         if (!Directory.Exists(uploadPath))
+        {
             Directory.CreateDirectory(uploadPath);
+        }
 
-        // Генерируем уникальное имя: GUID + оригинальное расширение
-        var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-        var filePath = Path.Combine(uploadPath, uniqueFileName);
+        var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(originalFileName)}";
+        var fullFilePath = Path.Combine(uploadPath, uniqueFileName);
 
-        // Копируем поток в файл
-        using var fileStreamOutput = new FileStream(filePath, FileMode.Create);
-        await fileStream.CopyToAsync(fileStreamOutput);
+        await using var outputStream = new FileStream(fullFilePath, FileMode.Create);
+        await fileStream.CopyToAsync(outputStream);
 
-        // Возвращаем относительный путь (например /uploads/abc.jpg)
-        return $"/{folderName}/{uniqueFileName}";
+        var publicUrl = $"/{folderName}/{uniqueFileName}";
+
+
+        return publicUrl;
     }
 }

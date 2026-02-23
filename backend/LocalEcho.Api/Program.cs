@@ -134,11 +134,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAllLocal");
-app.UseHttpsRedirection();
 
+app.UseStaticFiles();
+
+app.UseHttpsRedirection();
 app.UseAuthentication(); 
 app.UseAuthorization();
-
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())

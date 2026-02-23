@@ -14,7 +14,6 @@ public class MarkerRepository : IMarkerRepository
     public MarkerRepository(AppDbContext context)
         => _context = context ?? throw new ArgumentNullException(nameof(context));
 
-    // ... (Остальные методы CRUD/Vote без изменений) ...
     public async Task<Marker?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Markers.FirstOrDefaultAsync(m => m.Id == id, ct);
     public async Task AddAsync(Marker marker, CancellationToken ct = default)
@@ -30,7 +29,6 @@ public class MarkerRepository : IMarkerRepository
         return up - down;
     }
 
-    // === ИСПРАВЛЕННЫЙ МЕТОД ПРЕВЬЮ ===
     public async Task<IEnumerable<MarkerPreview>> GetPreviewsAsync(MarkerFilter filter, CancellationToken ct = default)
     {
         var query = _context.Markers.AsNoTracking();
@@ -41,7 +39,6 @@ public class MarkerRepository : IMarkerRepository
         if (filter.Status.HasValue)
             query = query.Where(m => m.Status == filter.Status.Value);
 
-        // BBOX фильтрация (используем сырые свойства Point для SQL)
         if (filter.MinLat.HasValue && filter.MaxLat.HasValue && 
             filter.MinLng.HasValue && filter.MaxLng.HasValue)
         {
@@ -51,23 +48,18 @@ public class MarkerRepository : IMarkerRepository
                 EF.Property<Point>(m, "Location").Y >= filter.MinLat.Value &&
                 EF.Property<Point>(m, "Location").Y <= filter.MaxLat.Value);
         }
-
-        // ПРОЕКЦИЯ
-        // Важно: Мы используем m.Location. Благодаря ValueConverter в DbContext, 
-        // EF сам превратит geometry(Point) из базы в GeoPoint C# класса.
+        
         return await query.Select(m => new MarkerPreview(
             m.Id,
             m.Title,
-            m.Location, // <--- Просто берем свойство, конвертер сделает остальное
+            m.Location,
             m.Category,
             m.Status
         )).ToListAsync(ct);
     }
 
-    // === ИСПРАВЛЕННЫЙ МЕТОД ДЕТАЛЕЙ ===
     public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)
     {
-        // Здесь мы просто берем m (Marker), так как ValueConverter сам превратит Point БД в GeoPoint C#
         return await _context.Markers.AsNoTracking()
             .Where(m => m.Id == markerId)
             .Select(m => new MarkerDetail(

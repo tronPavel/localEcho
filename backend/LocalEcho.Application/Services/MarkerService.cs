@@ -52,7 +52,6 @@ public class MarkerService : IMarkerService
 
     public async Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams)
     {
-        // ... (код парсинга фильтров и создания filter остается прежним) ...
         MarkerCategory? category = null;
         if (!string.IsNullOrEmpty(queryParams.Category) && Enum.TryParse<MarkerCategory>(queryParams.Category, true, out var c))
             category = c;
@@ -71,14 +70,12 @@ public class MarkerService : IMarkerService
             MaxLng = queryParams.MaxLng
         };
 
-        // Получаем превьюшки (внутри GeoPoint)
         var previews = await _repository.GetPreviewsAsync(filter);
 
-        // Маппим в DTO
         return previews.Select(p => new MarkerMapDto(
             p.Id,
-            p.Location.Latitude,  // <--- Берем из вложенного объекта Location
-            p.Location.Longitude, // <--- Берем из вложенного объекта Location
+            p.Location.Latitude,  
+            p.Location.Longitude, 
             p.Category,
             p.Status,
             p.Title
@@ -101,7 +98,7 @@ public class MarkerService : IMarkerService
             detail.Marker.Status,
             
             detail.Marker.CreatedByUserId,
-            detail.Creator?.Name ?? "Неизвестный",
+            detail.Creator?.Name,
             detail.Creator?.AvatarUrl,
             
             detail.Marker.Rating,
@@ -162,7 +159,6 @@ public class MarkerService : IMarkerService
     public async Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto)
     {
         var marker = await _repository.GetByIdAsync(id) ?? throw new KeyNotFoundException();
-        // Тут можно добавить проверку прав (является ли автором)
         marker.UpdateDescription(dto.Description);
         _repository.Update(marker);
         await _repository.SaveChangesAsync();

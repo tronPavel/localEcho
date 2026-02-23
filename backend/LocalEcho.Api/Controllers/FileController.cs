@@ -24,10 +24,8 @@ public class FilesController : ControllerBase
 
         try
         {
-            // API слой отвечает за преобразование HTTP-специфичного IFormFile в чистый Stream
             using var stream = file.OpenReadStream();
             
-            // Вызываем сервис, передавая поток и имя
             var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
             
             return Ok(new { url = url });

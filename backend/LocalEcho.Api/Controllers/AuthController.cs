@@ -155,7 +155,6 @@ public class AuthController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded");
 
-        // 1. Простая валидация (только картинки)
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(ext))
@@ -163,17 +162,13 @@ public class AuthController : ControllerBase
 
         try
         {
-            // 2. Получаем ID текущего пользователя
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
             var userId = Guid.Parse(userIdStr);
 
-            // 3. Сохраняем файл через сервис (в папку avatars для порядка)
             using var stream = file.OpenReadStream();
             var avatarUrl = await _fileService.SaveFileAsync(stream, file.FileName, "avatars");
 
-            // 4. Обновляем пользователя через AuthService
-            // Нам нужно добавить метод UpdateAvatarAsync в IAuthService
             var success = await _authService.UpdateAvatarAsync(userId, avatarUrl);
 
             if (!success) return BadRequest("Failed to update user profile");

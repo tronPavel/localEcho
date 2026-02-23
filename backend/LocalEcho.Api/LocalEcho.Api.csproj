@@ -26,7 +26,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Resources\SeedImages\" />
+      <None Update="Resources\SeedImages\announcement.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\SeedImages\avatar1.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\SeedImages\event.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\SeedImages\issue.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
