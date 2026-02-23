@@ -1,0 +1,31 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+}
+
+.switch {
+    text-align: center;
+    font-size: 14px;
+}
+
+.switch span {
+    color: #007bff;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.switch span:hover {
+    color: #0056b3;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

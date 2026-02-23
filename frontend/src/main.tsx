@@ -1,15 +1,14 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import { QueryClientProvider } from "@tanstack/react-query"
-import {QueryClient} from "@tanstack/react-query";
-
-const client = new QueryClient({})
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './app/App';
+import { QueryProvider } from './app/providers';
+import 'leaflet/dist/leaflet.css';
+import './index.css';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-      <QueryClientProvider client={client}>
-        <App />
-      </QueryClientProvider>
-  </StrictMode>,
-)
+    <StrictMode>
+        <QueryProvider>
+            <App />
+        </QueryProvider>
+    </StrictMode>,
+);

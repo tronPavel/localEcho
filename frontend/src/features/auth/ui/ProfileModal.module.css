@@ -1,0 +1,20 @@
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.profile h2 {
+    margin: 8px 0;
+}
+
+.profile p {
+    margin: 4px 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
