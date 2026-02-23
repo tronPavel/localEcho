@@ -1,0 +1,42 @@
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1500;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    padding: 24px 20px;
+    overflow-y: auto;
+}
+
+.mapWrapper {
+    flex: 1;
+    position: relative;
+}
+
+.map {
+    height: 100%;
+    width: 100%;
+}
