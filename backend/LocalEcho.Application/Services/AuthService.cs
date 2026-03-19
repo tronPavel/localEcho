@@ -14,15 +14,21 @@ namespace LocalEcho.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IIdentityRepository _identityRepository; 
+    private readonly ITokenRepository _tokenRepository;
     private readonly IDistrictRepository _districtRepository;
     private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
+        IIdentityRepository identityRepository, 
+        ITokenRepository tokenRepository,
         IDistrictRepository districtRepository,
         IConfiguration configuration)
     {
         _userRepository = userRepository;
+        _identityRepository = identityRepository;
+        _tokenRepository = tokenRepository;
         _districtRepository = districtRepository;
         _configuration = configuration;
     }
@@ -50,14 +56,14 @@ public class AuthService : IAuthService
             Points = 0
         };
 
-        await _userRepository.CreateAsync(user, dto.Password);
+        await _identityRepository.CreateUserAsync(user, dto.Password);
         return await GenerateTokensAsync(user);
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
         var user = await _userRepository.GetByEmailAsync(dto.Email);
-        if (user == null || !await _userRepository.CheckPasswordAsync(user, dto.Password))
+        if (user == null || !await _identityRepository.CheckPasswordAsync(user, dto.Password))
             throw new Exception("Invalid credentials");
 
         user.LastSeen = DateTime.UtcNow;
@@ -75,12 +81,12 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByIdAsync(Guid.Parse(userIdStr)) 
                    ?? throw new Exception("User not found");
 
-        var storedToken = await _userRepository.GetRefreshTokenAsync(user);
+        var storedToken = await _tokenRepository.GetRefreshTokenAsync(user);
         
         if (storedToken != dto.RefreshToken) 
             throw new Exception("Invalid refresh token");
 
-        await _userRepository.RemoveRefreshTokenAsync(user);
+        await _tokenRepository.RemoveRefreshTokenAsync(user);
 
         return await GenerateTokensAsync(user);
     }
@@ -90,14 +96,13 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByIdAsync(userId);
         if (user != null)
         {
-            await _userRepository.RemoveRefreshTokenAsync(user);
+            await _tokenRepository.RemoveRefreshTokenAsync(user);
         }
     }
-
-    // Приватные методы генерации токенов (оставил без изменений логику)
+    
     private async Task<AuthResponseDto> GenerateTokensAsync(ApplicationUser user)
     {
-        var userRoles = await _userRepository.GetRolesAsync(user);
+        var userRoles = await _identityRepository.GetRolesAsync(user);
 
         var claims = new List<Claim>
         {
@@ -113,7 +118,7 @@ public class AuthService : IAuthService
         var token = GenerateJwtToken(claims);
         var refreshToken = GenerateRefreshToken();
 
-        await _userRepository.SetRefreshTokenAsync(user, refreshToken);
+        await _tokenRepository.SetRefreshTokenAsync(user, refreshToken);
 
         var districtName = await _districtRepository.GetNameByIdAsync(user.DistrictId ?? Guid.Empty);
 
