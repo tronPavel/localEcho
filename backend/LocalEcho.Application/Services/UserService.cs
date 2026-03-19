@@ -7,11 +7,16 @@ namespace LocalEcho.Application.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IIdentityRepository _identityRepository; // ДОБАВЛЕНО
     private readonly IDistrictRepository _districtRepository;
 
-    public UserService(IUserRepository userRepository, IDistrictRepository districtRepository)
+    public UserService(
+        IUserRepository userRepository, 
+        IIdentityRepository identityRepository, 
+        IDistrictRepository districtRepository)
     {
         _userRepository = userRepository;
+        _identityRepository = identityRepository;
         _districtRepository = districtRepository;
     }
 
@@ -20,7 +25,7 @@ public class UserService : IUserService
         var user = await _userRepository.GetByIdAsync(userId) 
                    ?? throw new Exception("User not found");
         
-        var roles = await _userRepository.GetRolesAsync(user);
+        var roles = await _identityRepository.GetRolesAsync(user);
         var district = await _districtRepository.GetByIdAsync(user.DistrictId ?? Guid.Empty);
         
         DistrictDto? districtDto = null;

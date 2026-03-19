@@ -8,5 +8,4 @@ public interface IDistrictRepository
     Task<IEnumerable<District>> GetAllActiveAsync(CancellationToken ct = default);
     Task<string?> GetNameByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(District district, CancellationToken ct = default);
-    Task SaveChangesAsync(CancellationToken ct = default);
 }

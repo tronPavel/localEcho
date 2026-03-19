@@ -24,7 +24,4 @@ public class DistrictRepository : IDistrictRepository
 
     public async Task AddAsync(District district, CancellationToken ct = default)
         => await _context.Districts.AddAsync(district, ct);
-
-    public Task SaveChangesAsync(CancellationToken ct = default)
-        => _context.SaveChangesAsync(ct);
 }
