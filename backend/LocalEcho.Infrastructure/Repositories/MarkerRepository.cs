@@ -12,32 +12,56 @@ public class MarkerRepository : IMarkerRepository
     private readonly AppDbContext _context;
 
     public MarkerRepository(AppDbContext context)
-        => _context = context ?? throw new ArgumentNullException(nameof(context));
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
 
     public async Task<Marker?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await _context.Markers.FirstOrDefaultAsync(m => m.Id == id, ct);
-    public async Task AddAsync(Marker marker, CancellationToken ct = default)
-        => await _context.Markers.AddAsync(marker, ct);
-    public void Update(Marker marker) => _context.Markers.Update(marker);
-    public Task SaveChangesAsync(CancellationToken ct = default) => _context.SaveChangesAsync(ct);
-    public async Task<Vote?> GetVoteAsync(Guid markerId, Guid userId) => await _context.Votes.FindAsync(markerId, userId);
-    public async Task AddVoteAsync(Vote vote) => await _context.Votes.AddAsync(vote);
-    public void RemoveVote(Vote vote) => _context.Votes.Remove(vote);
-    public async Task<int> CalculateRatingAsync(Guid markerId) {
-        var up = await _context.Votes.CountAsync(v => v.MarkerId == markerId && v.IsUpvote);
-        var down = await _context.Votes.CountAsync(v => v.MarkerId == markerId && !v.IsUpvote);
-        return up - down;
+    {
+        return await _context.Markers.FirstOrDefaultAsync(m => m.Id == id, ct);
     }
+
+    public async Task AddAsync(Marker marker, CancellationToken ct = default)
+    {
+        await _context.Markers.AddAsync(marker, ct);
+    }
+
+    public void Update(Marker marker)
+    {
+        _context.Markers.Update(marker);
+    }
+
+
+    public async Task<Vote?> GetVoteAsync(Guid markerId, Guid userId)
+    {
+        return await _context.Votes.FindAsync(new object[] { markerId, userId });
+    }
+
+    public async Task AddVoteAsync(Vote vote)
+    {
+        await _context.Votes.AddAsync(vote);
+    }
+
+    public void RemoveVote(Vote vote)
+    {
+        _context.Votes.Remove(vote);
+    }
+
 
     public async Task<IEnumerable<MarkerPreview>> GetPreviewsAsync(MarkerFilter filter, CancellationToken ct = default)
     {
         var query = _context.Markers.AsNoTracking();
 
         if (filter.Category.HasValue)
+        {
             query = query.Where(m => m.Category == filter.Category.Value);
+        }
 
         if (filter.Status.HasValue)
+        {
             query = query.Where(m => m.Status == filter.Status.Value);
+        }
 
         if (filter.MinLat.HasValue && filter.MaxLat.HasValue && 
             filter.MinLng.HasValue && filter.MaxLng.HasValue)
@@ -49,13 +73,15 @@ public class MarkerRepository : IMarkerRepository
                 EF.Property<Point>(m, "Location").Y <= filter.MaxLat.Value);
         }
         
-        return await query.Select(m => new MarkerPreview(
-            m.Id,
-            m.Title,
-            m.Location,
-            m.Category,
-            m.Status
-        )).ToListAsync(ct);
+        return await query
+            .Select(m => new MarkerPreview(
+                m.Id,
+                m.Title,
+                m.Location,
+                m.Category,
+                m.Status
+            ))
+            .ToListAsync(ct);
     }
 
     public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)

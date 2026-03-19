@@ -106,19 +106,25 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddScoped<IMarkerRepository, MarkerRepository>();
 builder.Services.AddScoped<IDistrictRepository, DistrictRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // <-- Новый
+
+builder.Services.AddScoped<IUserRepository, UserRepository>(); 
+
+builder.Services.AddScoped<IdentityRepository>(); 
+builder.Services.AddScoped<IIdentityRepository>(sp => sp.GetRequiredService<IdentityRepository>());
+builder.Services.AddScoped<ITokenRepository>(sp => sp.GetRequiredService<IdentityRepository>());
 
 builder.Services.AddScoped<IUserContext, UserContext>();
-builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<IFileService, FileService>();
 
+builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserService, UserService>(); // <-- Новый
-builder.Services.AddScoped<IDistrictService, DistrictService>(); // <-- Новый
-builder.Services.AddScoped<ILeaderboardService, LeaderboardService>(); // <-- Новый
-
+builder.Services.AddScoped<IUserService, UserService>(); 
+builder.Services.AddScoped<IDistrictService, DistrictService>(); 
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("User", policy => policy.RequireRole("User"));
