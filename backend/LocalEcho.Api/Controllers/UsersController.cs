@@ -51,22 +51,30 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
-        
-        // Валидация файла (можно вынести в FileService)
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!allowedExtensions.Contains(ext)) return BadRequest("Invalid file type");
 
         try
         {
+            var profile = await _userService.GetProfileAsync(GetCurrentUserId());
+            var oldAvatarUrl = profile.AvatarUrl;
+
             using var stream = file.OpenReadStream();
-            var avatarUrl = await _fileService.SaveFileAsync(stream, file.FileName, "avatars");
-            await _userService.UpdateAvatarAsync(GetCurrentUserId(), avatarUrl);
-            return Ok(new { success = true, avatarUrl = avatarUrl });
+            var newAvatarUrl = await _fileService.SaveFileAsync(stream, file.FileName, "avatars");
+
+            if (!string.IsNullOrEmpty(oldAvatarUrl))
+            {
+                await _fileService.DeleteFileAsync(oldAvatarUrl);
+            }
+
+            await _userService.UpdateAvatarAsync(GetCurrentUserId(), newAvatarUrl);
+            return Ok(new { success = true, avatarUrl = newAvatarUrl });
+        }
+        catch (ArgumentException ex) 
+        {
+            return BadRequest(new { success = false, message = ex.Message });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { success = false, message = "Внутренняя ошибка сервера" });
         }
     }
 }
