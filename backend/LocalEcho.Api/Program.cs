@@ -1,4 +1,3 @@
-using LocalEcho.API.Services;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Application.Services;
 using LocalEcho.Core.Interfaces;
@@ -122,7 +121,6 @@ builder.Services.AddScoped<IdentityRepository>();
 builder.Services.AddScoped<IIdentityRepository>(sp => sp.GetRequiredService<IdentityRepository>());
 builder.Services.AddScoped<ITokenRepository>(sp => sp.GetRequiredService<IdentityRepository>());
 
-builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddScoped<IMarkerService, MarkerService>();

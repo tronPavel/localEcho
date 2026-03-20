@@ -2,6 +2,7 @@ using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LocalEcho.API.Controllers;
 
@@ -16,34 +17,52 @@ public class MarkersController : ControllerBase
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }
 
-    [HttpPost]
+    private Guid? GetCurrentUserId()
+    {
+        var idStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return string.IsNullOrEmpty(idStr) ? null : Guid.Parse(idStr);
+    }
+
+    private Guid GetCurrentDistrictId()
+    {
+        var districtStr = User.FindFirst("DistrictId")?.Value;
+        return string.IsNullOrEmpty(districtStr) ? Guid.Empty : Guid.Parse(districtStr);
+    }[HttpPost]
     [Authorize(Policy = "User")]
     public async Task<IActionResult> Create([FromBody] CreateMarkerDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var markerId = await _service.CreateMarkerAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = markerId }, null);
-    }
 
-    [HttpGet("{id:guid}")]
+        var userId = GetCurrentUserId()!.Value;
+        var districtId = GetCurrentDistrictId();
+
+        var markerId = await _service.CreateMarkerAsync(dto, userId, districtId);
+        
+        return CreatedAtAction(nameof(GetById), new { id = markerId }, null);
+    }[HttpGet("{id:guid}")]
+    [AllowAnonymous] 
     public async Task<IActionResult> GetById(Guid id)
     {
-        var detailDto = await _service.GetMarkerDetailsAsync(id);
+        var userId = GetCurrentUserId();
+        
+        var detailDto = await _service.GetMarkerDetailsAsync(id, userId);
         return Ok(detailDto);
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetFiltered([FromQuery] GetMarkersQueryParams query)
     {
         var markers = await _service.GetMapMarkersAsync(query);
         return Ok(markers);
-    }
-
-    [HttpPost("{id:guid}/vote")]
+    }[HttpPost("{id:guid}/vote")]
     [Authorize]
-    public async Task<IActionResult> Vote(Guid id, [FromBody] VoteDto dto)
+    public async Task<IActionResult> Vote(Guid id,[FromBody] VoteDto dto)
     {
-        await _service.VoteAsync(id, dto);
-        return Ok(new { message = "Voted successfully" });
+        var voterId = GetCurrentUserId()!.Value;
+        
+        await _service.VoteAsync(id, dto, voterId);
+        
+        return Ok(new { message = "Голос успешно учтен" });
     }
 }

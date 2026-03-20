@@ -12,42 +12,35 @@ public class MarkerService : IMarkerService
     private readonly IMarkerRepository _markerRepository;
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IUserContext _userContext;
     private readonly GeometryFactory _geometryFactory;
 
     public MarkerService(
         IMarkerRepository markerRepository,
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
-        IUserContext userContext,
         GeometryFactory geometryFactory)
     {
         _markerRepository = markerRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
-        _userContext = userContext;
         _geometryFactory = geometryFactory;
     }
 
-     public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
+    public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId)
     {
-        if (!_userContext.IsAuthenticated) 
-            throw new UnauthorizedAccessException("Для создания метки необходимо авторизоваться.");
-        
         var point = _geometryFactory.CreatePoint(new Coordinate(dto.Longitude, dto.Latitude));
         
         var marker = Marker.Create(
             dto.Title, 
             point, 
             dto.Category, 
-            _userContext.UserId, 
-            _userContext.DistrictId, 
+            userId,      
+            districtId,   
             dto.Description,
             dto.ImageUrl
         );
 
         await _markerRepository.AddAsync(marker);
-        
         await _unitOfWork.SaveChangesAsync(); 
 
         return marker.Id;
@@ -62,41 +55,31 @@ public class MarkerService : IMarkerService
         if (!string.IsNullOrEmpty(queryParams.Status) && Enum.TryParse<MarkerStatus>(queryParams.Status, true, out var s)) status = s;
 
         var filter = new MarkerFilter { 
-            Category = category, 
-            Status = status, 
-            MinLat = queryParams.MinLat, 
-            MaxLat = queryParams.MaxLat, 
-            MinLng = queryParams.MinLng, 
-            MaxLng = queryParams.MaxLng,
-            Limit = queryParams.Limit 
+            Category = category, Status = status, MinLat = queryParams.MinLat, MaxLat = queryParams.MaxLat, MinLng = queryParams.MinLng, MaxLng = queryParams.MaxLng, Limit = queryParams.Limit 
         };
 
         var previews = await _markerRepository.GetPreviewsAsync(filter);
 
         return previews.Select(p => new MarkerMapDto(
-            p.Id,
-            p.Latitude,   
-            p.Longitude,  
-            p.Category,
-            p.Status,
-            p.Title
+            p.Id, p.Latitude, p.Longitude, p.Category, p.Status, p.Title
         ));
     }
 
-    public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id)
+    public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
     {
-        var currentUserId = _userContext.IsAuthenticated ? _userContext.UserId : (Guid?)null;
         var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
                      ?? throw new KeyNotFoundException("Метка не найдена или была удалена."); 
+                     
         return new MarkerDetailDto(detail.Marker.Id, detail.Marker.Title, detail.Marker.Description, detail.Marker.ImageUrl, detail.Marker.Category, detail.Marker.Status, detail.Marker.CreatedByUserId, detail.Creator?.Name, detail.Creator?.AvatarUrl, detail.Marker.Rating, detail.UserVote, detail.Marker.CreatedAt, detail.Marker.UpdatedAt);
     }
 
-   
-
     public async Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto)
     {
+        // В будущем сюда тоже можно добавить параметр userId, чтобы проверять:
+        // if (marker.CreatedByUserId != userId) throw new ForbiddenException("Чужая метка");
         var marker = await _markerRepository.GetByIdAsync(id) 
                      ?? throw new KeyNotFoundException("Метка не найдена.");
+                     
         marker.UpdateDescription(dto.Description);
         _markerRepository.Update(marker);
         await _unitOfWork.SaveChangesAsync();
@@ -106,17 +89,14 @@ public class MarkerService : IMarkerService
     {
         var marker = await _markerRepository.GetByIdAsync(id) 
                      ?? throw new KeyNotFoundException("Метка не найдена.");
+                     
         marker.ChangeStatus(newStatus);
         _markerRepository.Update(marker);
         await _unitOfWork.SaveChangesAsync();
     }
     
-    public async Task VoteAsync(Guid markerId, VoteDto dto)
+    public async Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId)
     {
-        if (!_userContext.IsAuthenticated) 
-            throw new UnauthorizedAccessException("Для голосования необходимо авторизоваться.");
-        var voterId = _userContext.UserId;
-
         using var transaction = await _unitOfWork.BeginTransactionAsync();
 
         try
@@ -150,7 +130,6 @@ public class MarkerService : IMarkerService
             if (delta != 0)
             {
                 marker.UpdateRating(marker.Rating + delta);
-                
                 await _userRepository.UpdatePointsAsync(marker.CreatedByUserId, delta);
                 await _unitOfWork.SaveChangesAsync(); 
             }

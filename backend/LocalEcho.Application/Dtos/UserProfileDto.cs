@@ -8,7 +8,6 @@ public record UserProfileDto(
     string? HomeAddress,
     bool IsVerified,
     int Points,
-    DateTime LastSeen,
     DateTime CreatedAt,
     DistrictDto? District,
     IList<string> Roles

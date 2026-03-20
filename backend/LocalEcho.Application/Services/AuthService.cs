@@ -52,7 +52,6 @@ public class AuthService : IAuthService
             HomeAddress = dto.HomeAddress,
             HomeLocation = district.Boundaries.Centroid, 
             CreatedAt = DateTime.UtcNow,
-            LastSeen = DateTime.UtcNow,
             IsVerified = false,
             Points = 0
         };
@@ -66,10 +65,6 @@ public class AuthService : IAuthService
         var user = await _userRepository.GetByEmailAsync(dto.Email);
         if (user == null || !await _identityRepository.CheckPasswordAsync(user, dto.Password))
             throw new BadRequestException("Неверный Email или пароль.");
-
-        user.LastSeen = DateTime.UtcNow;
-        await _userRepository.UpdateAsync(user);
-
         return await GenerateTokensAsync(user);
     }
 

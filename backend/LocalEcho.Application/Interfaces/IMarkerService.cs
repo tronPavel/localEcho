@@ -5,11 +5,14 @@ namespace LocalEcho.Application.Interfaces;
 
 public interface IMarkerService
 {
-    Task<Guid> CreateMarkerAsync(CreateMarkerDto dto);
-    Task VoteAsync(Guid markerId, VoteDto dto);
+    Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId);
+    
+    Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams);
+    
+    Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId);
+    
     Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto);
     Task ChangeStatusAsync(Guid id, MarkerStatus newStatus);
-
-    Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams query);
-    Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id);
+    
+    Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId);
 }

@@ -43,7 +43,7 @@ public class UserService : IUserService
 
         return new UserProfileDto(
             user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress,
-            user.IsVerified, user.Points, user.LastSeen, user.CreatedAt, districtDto, roles
+            user.IsVerified, user.Points, user.CreatedAt, districtDto, roles
         );
     }
 

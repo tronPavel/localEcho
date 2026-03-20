@@ -12,6 +12,5 @@ public class ApplicationUser : IdentityUser<Guid>
     public Point? HomeLocation { get; set; } 
     public bool IsVerified { get; set; } = false;
     public int Points { get; set; } = 0;
-    public DateTime LastSeen { get; set; } = DateTime.UtcNow;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
