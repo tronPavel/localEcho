@@ -3,6 +3,7 @@ using LocalEcho.Core.Interfaces;
 using LocalEcho.Core.Models;
 using LocalEcho.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite;
 using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Infrastructure.Repositories;
@@ -53,34 +54,37 @@ public class MarkerRepository : IMarkerRepository
     {
         var query = _context.Markers.AsNoTracking();
 
-        if (filter.Category.HasValue)
+        if (filter.Category.HasValue) query = query.Where(m => m.Category == filter.Category.Value);
+        if (filter.Status.HasValue)   query = query.Where(m => m.Status == filter.Status.Value);
+
+        if (filter.HasBoundingBox())
         {
-            query = query.Where(m => m.Category == filter.Category.Value);
+            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+            
+            var boundingBox = geometryFactory.ToGeometry(
+                new Envelope(
+                    filter.MinLng!.Value, filter.MaxLng!.Value, 
+                    filter.MinLat!.Value, filter.MaxLat!.Value)
+            );
+            
+            // EF Core без всяких ValueConverters автоматически сделает:
+            // WHERE m."Location" && @boundingBox AND ST_Intersects(m."Location", @boundingBox)
+            query = query.Where(m => m.Location.Intersects(boundingBox));
         }
 
-        if (filter.Status.HasValue)
-        {
-            query = query.Where(m => m.Status == filter.Status.Value);
-        }
+        // Выдаем самые свежие проблемы
+        query = query.OrderByDescending(m => m.CreatedAt);
 
-        if (filter.MinLat.HasValue && filter.MaxLat.HasValue && 
-            filter.MinLng.HasValue && filter.MaxLng.HasValue)
-        {
-            query = query.Where(m =>
-                EF.Property<Point>(m, "Location").X >= filter.MinLng.Value &&
-                EF.Property<Point>(m, "Location").X <= filter.MaxLng.Value &&
-                EF.Property<Point>(m, "Location").Y >= filter.MinLat.Value &&
-                EF.Property<Point>(m, "Location").Y <= filter.MaxLat.Value);
-        }
-        
         return await query
             .Select(m => new MarkerPreview(
                 m.Id,
                 m.Title,
-                m.Location,
+                m.Location.Y, 
+                m.Location.X, 
                 m.Category,
                 m.Status
             ))
+            .Take(filter.Limit ?? 1000)
             .ToListAsync(ct);
     }
 
