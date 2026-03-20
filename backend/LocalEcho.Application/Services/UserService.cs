@@ -1,5 +1,6 @@
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
+using LocalEcho.Core.Exceptions;
 using LocalEcho.Core.Interfaces;
 
 
@@ -23,7 +24,8 @@ public class UserService : IUserService
 
     public async Task<UserProfileDto> GetProfileAsync(Guid userId)
     {
-        var user = await _userRepository.GetByIdAsync(userId) ?? throw new Exception("User not found");
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден или был удален."); 
         var roles = await _identityRepository.GetRolesAsync(user);
         var district = await _districtRepository.GetByIdAsync(user.DistrictId ?? Guid.Empty);
         
@@ -47,9 +49,11 @@ public class UserService : IUserService
 
     public async Task ChangeDistrictAsync(Guid userId, ChangeDistrictDto dto)
     {
-        var user = await _userRepository.GetByIdAsync(userId) ?? throw new Exception("User not found");
-        var district = await _districtRepository.GetByIdAsync(dto.DistrictId) ?? throw new Exception("District not found");
-
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден.");
+            
+        var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
+                       ?? throw new KeyNotFoundException("Указанный район не существует.");
         user.DistrictId = dto.DistrictId;
         
         user.HomeLocation = district.Centroid; 
@@ -61,8 +65,8 @@ public class UserService : IUserService
 
     public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
     {
-        var user = await _userRepository.GetByIdAsync(userId) ?? throw new Exception("User not found");
-        
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден.");
         if (dto.Name != null) user.Name = dto.Name; 
         if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
         
@@ -71,7 +75,8 @@ public class UserService : IUserService
 
     public async Task UpdateAvatarAsync(Guid userId, string avatarUrl)
     {
-        var user = await _userRepository.GetByIdAsync(userId) ?? throw new Exception("User not found");
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден.");
         user.AvatarUrl = avatarUrl;
         await _userRepository.UpdateAsync(user);
     }

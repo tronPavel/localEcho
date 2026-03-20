@@ -5,6 +5,7 @@ using System.Text;
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Entities.Identity;
+using LocalEcho.Core.Exceptions;
 using LocalEcho.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -36,11 +37,11 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
         var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
-        if (existingUser != null) throw new Exception("Email already exists");
+        if (existingUser != null) 
+            throw new BadRequestException("Пользователь с таким Email уже зарегистрирован.");
 
-        // Вытягиваем доменную модель района с БД (вместе с ее Boundaries (Polygon))
         var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
-                       ?? throw new Exception("District not found");
+                       ?? throw new KeyNotFoundException("Указанный район не существует.");
 
         var user = new ApplicationUser
         {
@@ -49,11 +50,7 @@ public class AuthService : IAuthService
             Name = dto.Name,
             DistrictId = dto.DistrictId,
             HomeAddress = dto.HomeAddress,
-            
-            // EF Core достанет из БД полигон (Boundaries) и сама математически вычислит
-            // центроид-точку (Point). Мы кладем ее в профиль юзера
             HomeLocation = district.Boundaries.Centroid, 
-            
             CreatedAt = DateTime.UtcNow,
             LastSeen = DateTime.UtcNow,
             IsVerified = false,
@@ -68,7 +65,7 @@ public class AuthService : IAuthService
     {
         var user = await _userRepository.GetByEmailAsync(dto.Email);
         if (user == null || !await _identityRepository.CheckPasswordAsync(user, dto.Password))
-            throw new Exception("Invalid credentials");
+            throw new BadRequestException("Неверный Email или пароль.");
 
         user.LastSeen = DateTime.UtcNow;
         await _userRepository.UpdateAsync(user);
@@ -80,15 +77,15 @@ public class AuthService : IAuthService
     {
         var principal = GetPrincipalFromExpiredToken(dto.Token);
         var userIdStr = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                        ?? throw new Exception("Invalid token claims");
+                        ?? throw new SecurityTokenException("Недействительный токен доступа.");
         
         var user = await _userRepository.GetByIdAsync(Guid.Parse(userIdStr)) 
-                   ?? throw new Exception("User not found");
+                   ?? throw new SecurityTokenException("Пользователь не найден.");
 
         var storedToken = await _tokenRepository.GetRefreshTokenAsync(user);
         
         if (storedToken != dto.RefreshToken) 
-            throw new Exception("Invalid refresh token");
+            throw new SecurityTokenException("Сессия устарела или недействительна. Пожалуйста, войдите заново.");
 
         await _tokenRepository.RemoveRefreshTokenAsync(user);
 

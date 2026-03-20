@@ -28,15 +28,8 @@ public class MarkersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        try 
-        {
-            var detailDto = await _service.GetMarkerDetailsAsync(id);
-            return Ok(detailDto);
-        } 
-        catch (KeyNotFoundException) 
-        {
-            return NotFound();
-        }
+        var detailDto = await _service.GetMarkerDetailsAsync(id);
+        return Ok(detailDto);
     }
 
     [HttpGet]

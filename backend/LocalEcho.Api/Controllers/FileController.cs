@@ -21,21 +21,9 @@ public class FilesController : ControllerBase
     public async Task<IActionResult> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded");
-
-        try
-        {
-            using var stream = file.OpenReadStream();
-            var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
-            return Ok(new { url });
-        }
-        catch (ArgumentException ex) 
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
+        using var stream = file.OpenReadStream();
+        var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
+        return Ok(new { url });
     }
 
     [HttpDelete("delete")]

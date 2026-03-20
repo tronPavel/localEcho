@@ -31,8 +31,9 @@ public class MarkerService : IMarkerService
 
      public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
     {
-        if (!_userContext.IsAuthenticated) throw new UnauthorizedAccessException();
-
+        if (!_userContext.IsAuthenticated) 
+            throw new UnauthorizedAccessException("Для создания метки необходимо авторизоваться.");
+        
         var point = _geometryFactory.CreatePoint(new Coordinate(dto.Longitude, dto.Latitude));
         
         var marker = Marker.Create(
@@ -85,7 +86,8 @@ public class MarkerService : IMarkerService
     public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id)
     {
         var currentUserId = _userContext.IsAuthenticated ? _userContext.UserId : (Guid?)null;
-        var detail = await _markerRepository.GetDetailAsync(id, currentUserId) ?? throw new KeyNotFoundException($"Marker {id} not found");
+        var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
+                     ?? throw new KeyNotFoundException("Метка не найдена или была удалена."); 
         return new MarkerDetailDto(detail.Marker.Id, detail.Marker.Title, detail.Marker.Description, detail.Marker.ImageUrl, detail.Marker.Category, detail.Marker.Status, detail.Marker.CreatedByUserId, detail.Creator?.Name, detail.Creator?.AvatarUrl, detail.Marker.Rating, detail.UserVote, detail.Marker.CreatedAt, detail.Marker.UpdatedAt);
     }
 
@@ -93,7 +95,8 @@ public class MarkerService : IMarkerService
 
     public async Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto)
     {
-        var marker = await _markerRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException();
+        var marker = await _markerRepository.GetByIdAsync(id) 
+                     ?? throw new KeyNotFoundException("Метка не найдена.");
         marker.UpdateDescription(dto.Description);
         _markerRepository.Update(marker);
         await _unitOfWork.SaveChangesAsync();
@@ -101,7 +104,8 @@ public class MarkerService : IMarkerService
 
     public async Task ChangeStatusAsync(Guid id, MarkerStatus newStatus)
     {
-        var marker = await _markerRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException();
+        var marker = await _markerRepository.GetByIdAsync(id) 
+                     ?? throw new KeyNotFoundException("Метка не найдена.");
         marker.ChangeStatus(newStatus);
         _markerRepository.Update(marker);
         await _unitOfWork.SaveChangesAsync();
@@ -109,7 +113,8 @@ public class MarkerService : IMarkerService
     
     public async Task VoteAsync(Guid markerId, VoteDto dto)
     {
-        if (!_userContext.IsAuthenticated) throw new UnauthorizedAccessException();
+        if (!_userContext.IsAuthenticated) 
+            throw new UnauthorizedAccessException("Для голосования необходимо авторизоваться.");
         var voterId = _userContext.UserId;
 
         using var transaction = await _unitOfWork.BeginTransactionAsync();
@@ -117,7 +122,7 @@ public class MarkerService : IMarkerService
         try
         {
             var marker = await _markerRepository.GetByIdAsync(markerId) 
-                         ?? throw new KeyNotFoundException("Marker not found");
+                         ?? throw new KeyNotFoundException("Метка для голосования не найдена.");
 
             var existingVote = await _markerRepository.GetVoteAsync(markerId, voterId);
             

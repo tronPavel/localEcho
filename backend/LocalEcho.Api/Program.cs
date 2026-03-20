@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models; 
 using System.Text;
 using System.Text.Json.Serialization;
+using LocalEcho.API.Middleware;
 using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Infrastructure.Data;
 using LocalEcho.Infrastructure.Services;
@@ -137,6 +138,8 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
