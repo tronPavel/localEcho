@@ -8,3 +8,7 @@ export const uploadFile = async (file: File): Promise<string> => {
     });
     return response.data.url;
 };
+
+export const deleteFile = async (url: string): Promise<void> => {
+    await api.delete('/files/delete', { data: { url } });
+};

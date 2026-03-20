@@ -12,11 +12,12 @@ interface GetMarkersParams {
     maxLat?: number;
     minLng?: number;
     maxLng?: number;
+    limit?: number; // <-- ДОБАВЛЕНО
 }
 
 export const getMarkers = async (params: GetMarkersParams = {}): Promise<MarkerMapDto[]> => {
     const queryParams = Object.fromEntries(
-        Object.entries(params).filter(([_, v]) => v != null)
+        Object.entries(params).filter(([_, v]) => v != null && v !== '')
     );
 
     const response = await api.get('/markers', { params: queryParams });

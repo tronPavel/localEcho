@@ -13,7 +13,7 @@ export const ViewMarkerModal = () => {
     const { data: fullMarker, isLoading, isError } = useQuery({
         queryKey: ['marker', selectedMarker?.id],
         queryFn: () => getMarkerDetails(selectedMarker!.id),
-        enabled: !!selectedMarker?.id, // Не делать запрос, если ничего не выбрано
+        enabled: !!selectedMarker?.id,
     });
 
     if (!selectedMarker) return null;

@@ -8,7 +8,7 @@ import { createMarkerSchema } from '../lib/validateMarker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createMarker } from '../model/createMarkerApi';
 import { useCreateMarkerStore } from '../model/createMarkerStore';
-import { uploadFile } from '@/features/upload-file/model/uploadApi';
+import {deleteFile, uploadFile} from '@/features/upload-file/model/uploadApi';
 import { useState } from 'react';
 import styles from './CreateMarkerForm.module.css';
 
@@ -27,48 +27,49 @@ export const CreateMarkerForm = () => {
         defaultValues: { category: 'Issue' },
     });
 
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const[selectedFile, setSelectedFile] = useState<File | null>(null);
+    const[previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const mutation = useMutation({
         mutationFn: async (data: FormData) => {
-            console.log('🚀 Создание маркера начато', data);
-
             let imageUrl: string | undefined = undefined;
+
             if (selectedFile) {
-                console.log('📤 Загружаем файл...', selectedFile.name);
                 imageUrl = await uploadFile(selectedFile);
-                console.log('✅ Файл загружен:', imageUrl);
             }
 
-            await createMarker({
-                title: data.title,
-                description: data.description,
-                category: data.category,
-                latitude: pendingPosition!.lat,
-                longitude: pendingPosition!.lng,
-                imageUrl,
-            });
+            try {
+                await createMarker({
+                    title: data.title,
+                    description: data.description,
+                    category: data.category,
+                    latitude: pendingPosition!.lat,
+                    longitude: pendingPosition!.lng,
+                    imageUrl,
+                });
+            } catch (error) {
+                if (imageUrl) {
+                    console.log("Откат: удаляем осиротевшую картинку...", imageUrl);
+                    await deleteFile(imageUrl).catch(e => console.error("Не удалось удалить сироту:", e));
+                }
 
-            console.log('✅ Маркер успешно создан');
+                throw error;
+            }
         },
         onSuccess: () => {
-            console.log('🎉 onSuccess — обновляем список');
             queryClient.invalidateQueries({ queryKey: ['markers'] });
             closeModal();
             reset();
             setSelectedFile(null);
             setPreviewUrl(null);
-            alert('Маркер успешно создан!');
         },
         onError: (err: any) => {
-            console.error('❌ Ошибка создания маркера:', err);
-            alert('Ошибка: ' + (err?.response?.data?.error || err.message || 'Неизвестная ошибка'));
+            //alert('Ошибка: ' + (err?.response?.data?.message || err.message || 'Неизвестная ошибка'));
         },
     });
 
+
     const onSubmit: SubmitHandler<FormData> = (data) => {
-        console.log('📝 Форма отправлена');
         mutation.mutate(data);
     };
 
