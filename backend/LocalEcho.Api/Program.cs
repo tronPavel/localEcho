@@ -14,6 +14,8 @@ using System.Text.Json.Serialization;
 using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Infrastructure.Data;
 using LocalEcho.Infrastructure.Services;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,7 +61,9 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
-
+//фабрика для чистоты кода в сервисах
+var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+builder.Services.AddSingleton(geometryFactory); 
 // 4. БД
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(

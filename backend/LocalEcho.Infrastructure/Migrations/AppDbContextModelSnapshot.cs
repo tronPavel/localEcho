@@ -30,11 +30,9 @@ namespace LocalEcho.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<double>("CenterLat")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("CenterLng")
-                        .HasColumnType("double precision");
+                    b.Property<Polygon>("Boundaries")
+                        .IsRequired()
+                        .HasColumnType("geometry(Polygon, 4326)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -57,83 +55,14 @@ namespace LocalEcho.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Boundaries");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Boundaries"), "GIST");
+
                     b.ToTable("Districts");
                 });
 
-            modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("DistrictId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<Point>("Location")
-                        .IsRequired()
-                        .HasColumnType("geometry(Point, 4326)");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Location");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Location"), "GIST");
-
-                    b.ToTable("Markers");
-                });
-
-            modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
-                {
-                    b.Property<Guid>("MarkerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsUpvote")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("MarkerId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Votes");
-                });
-
-            modelBuilder.Entity("LocalEcho.Infrastructure.Identity.ApplicationRole", b =>
+            modelBuilder.Entity("LocalEcho.Core.Entities.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -163,7 +92,7 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("LocalEcho.Infrastructure.Identity.ApplicationUser", b =>
+            modelBuilder.Entity("LocalEcho.Core.Entities.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -195,11 +124,8 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.Property<string>("HomeAddress")
                         .HasColumnType("text");
 
-                    b.Property<double?>("HomeLatitude")
-                        .HasColumnType("double precision");
-
-                    b.Property<double?>("HomeLongitude")
-                        .HasColumnType("double precision");
+                    b.Property<Point>("HomeLocation")
+                        .HasColumnType("geometry(Point, 4326)");
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
@@ -250,6 +176,10 @@ namespace LocalEcho.Infrastructure.Migrations
 
                     b.HasIndex("DistrictId");
 
+                    b.HasIndex("HomeLocation");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("HomeLocation"), "GIST");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -258,6 +188,81 @@ namespace LocalEcho.Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("DistrictId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<Point>("Location")
+                        .IsRequired()
+                        .HasColumnType("geometry(Point, 4326)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Location");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Location"), "GIST");
+
+                    b.ToTable("Markers");
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
+                {
+                    b.Property<Guid>("MarkerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsUpvote")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("MarkerId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Votes");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -363,6 +368,17 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>
+                {
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+                });
+
             modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
                 {
                     b.HasOne("LocalEcho.Core.Entities.Marker", null)
@@ -371,7 +387,7 @@ namespace LocalEcho.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -380,7 +396,7 @@ namespace LocalEcho.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -389,7 +405,7 @@ namespace LocalEcho.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -398,7 +414,7 @@ namespace LocalEcho.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -407,13 +423,13 @@ namespace LocalEcho.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationRole", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -422,7 +438,7 @@ namespace LocalEcho.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("LocalEcho.Infrastructure.Identity.ApplicationUser", null)
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

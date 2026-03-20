@@ -3,6 +3,7 @@ using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Entities;
 using LocalEcho.Core.Interfaces;
 using LocalEcho.Core.Models;
+using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Application.Services;
 
@@ -12,28 +13,42 @@ public class MarkerService : IMarkerService
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContext _userContext;
+    private readonly GeometryFactory _geometryFactory;
 
     public MarkerService(
         IMarkerRepository markerRepository,
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
-        IUserContext userContext)
+        IUserContext userContext,
+        GeometryFactory geometryFactory)
     {
         _markerRepository = markerRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _userContext = userContext;
+        _geometryFactory = geometryFactory;
     }
 
-    public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
+     public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto)
     {
-        if (!_userContext.IsAuthenticated) throw new UnauthorizedAccessException("User is not authenticated");
-        var userId = _userContext.UserId;
-        var districtId = _userContext.DistrictId;
-        var location = new GeoPoint(dto.Latitude, dto.Longitude);
-        var marker = Marker.Create(dto.Title, location, dto.Category, userId, districtId, dto.Description, dto.ImageUrl);
+        if (!_userContext.IsAuthenticated) throw new UnauthorizedAccessException();
+
+        var point = _geometryFactory.CreatePoint(new Coordinate(dto.Longitude, dto.Latitude));
+        
+        var marker = Marker.Create(
+            dto.Title, 
+            point, 
+            dto.Category, 
+            _userContext.UserId, 
+            _userContext.DistrictId, 
+            dto.Description,
+            dto.ImageUrl
+        );
+
         await _markerRepository.AddAsync(marker);
-        await _unitOfWork.SaveChangesAsync();
+        
+        await _unitOfWork.SaveChangesAsync(); 
+
         return marker.Id;
     }
 
@@ -41,12 +56,30 @@ public class MarkerService : IMarkerService
     {
         MarkerCategory? category = null;
         if (!string.IsNullOrEmpty(queryParams.Category) && Enum.TryParse<MarkerCategory>(queryParams.Category, true, out var c)) category = c;
+
         MarkerStatus? status = null;
         if (!string.IsNullOrEmpty(queryParams.Status) && Enum.TryParse<MarkerStatus>(queryParams.Status, true, out var s)) status = s;
 
-        var filter = new MarkerFilter { Category = category, Status = status, MinLat = queryParams.MinLat, MaxLat = queryParams.MaxLat, MinLng = queryParams.MinLng, MaxLng = queryParams.MaxLng };
+        var filter = new MarkerFilter { 
+            Category = category, 
+            Status = status, 
+            MinLat = queryParams.MinLat, 
+            MaxLat = queryParams.MaxLat, 
+            MinLng = queryParams.MinLng, 
+            MaxLng = queryParams.MaxLng,
+            Limit = queryParams.Limit 
+        };
+
         var previews = await _markerRepository.GetPreviewsAsync(filter);
-        return previews.Select(p => new MarkerMapDto(p.Id, p.Location.Latitude, p.Location.Longitude, p.Category, p.Status, p.Title));
+
+        return previews.Select(p => new MarkerMapDto(
+            p.Id,
+            p.Latitude,   
+            p.Longitude,  
+            p.Category,
+            p.Status,
+            p.Title
+        ));
     }
 
     public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id)

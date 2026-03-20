@@ -38,6 +38,7 @@ public class AuthService : IAuthService
         var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
         if (existingUser != null) throw new Exception("Email already exists");
 
+        // Вытягиваем доменную модель района с БД (вместе с ее Boundaries (Polygon))
         var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
                        ?? throw new Exception("District not found");
 
@@ -48,8 +49,11 @@ public class AuthService : IAuthService
             Name = dto.Name,
             DistrictId = dto.DistrictId,
             HomeAddress = dto.HomeAddress,
-            HomeLatitude = district.CenterLat, 
-            HomeLongitude = district.CenterLng,
+            
+            // EF Core достанет из БД полигон (Boundaries) и сама математически вычислит
+            // центроид-точку (Point). Мы кладем ее в профиль юзера
+            HomeLocation = district.Boundaries.Centroid, 
+            
             CreatedAt = DateTime.UtcNow,
             LastSeen = DateTime.UtcNow,
             IsVerified = false,

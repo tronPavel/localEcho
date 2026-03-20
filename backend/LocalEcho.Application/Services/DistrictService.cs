@@ -16,6 +16,14 @@ public class DistrictService : IDistrictService
     public async Task<IEnumerable<DistrictDto>> GetAllActiveDistrictsAsync()
     {
         var districts = await _repository.GetAllActiveAsync();
-        return districts.Select(d => new DistrictDto(d.Id, d.Name, d.Description, d.CenterLat, d.CenterLng, d.IconColor));
+        
+        return districts.Select(d => new DistrictDto(
+            d.Id, 
+            d.Name, 
+            d.Description, 
+            d.Centroid.Y, 
+            d.Centroid.X,
+            d.IconColor
+        ));
     }
 }
