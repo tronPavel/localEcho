@@ -11,4 +11,10 @@ public record MarkerFilter
     public double? MaxLat { get; init; }
     public double? MinLng { get; init; }
     public double? MaxLng { get; init; }
+    
+    public int? Limit { get; init; }
+
+    public bool HasBoundingBox() => 
+        MinLat.HasValue && MaxLat.HasValue && 
+        MinLng.HasValue && MaxLng.HasValue;
 }

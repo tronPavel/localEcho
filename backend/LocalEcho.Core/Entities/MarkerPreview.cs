@@ -5,7 +5,8 @@ namespace LocalEcho.Core.Models;
 public record MarkerPreview(
     Guid Id,
     string Title,
-    GeoPoint Location,
+    double Latitude, 
+    double Longitude,
     MarkerCategory Category,
     MarkerStatus Status
 );
