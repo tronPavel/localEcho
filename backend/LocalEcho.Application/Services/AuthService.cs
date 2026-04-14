@@ -176,3 +176,4 @@ public class AuthService : IAuthService
 
     private int GetTokenLifetime() => _configuration.GetValue<int>("JwtSettings:TokenLifetimeMinutes", 60);
 }
+

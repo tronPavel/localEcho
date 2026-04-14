@@ -10,4 +10,5 @@ public interface IDistrictRepository
     Task<string?> GetNameByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(District district, CancellationToken ct = default);
     Task<District?> GetDistrictByCoordinatesAsync(Point p, CancellationToken ct = default);
+    Task<bool> IsPointInDistrictAsync(Point p, Guid districtId);
 }

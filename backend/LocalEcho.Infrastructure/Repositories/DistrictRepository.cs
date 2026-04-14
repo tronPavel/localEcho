@@ -30,4 +30,9 @@ public class DistrictRepository : IDistrictRepository
         return await _context.Districts
             .FirstOrDefaultAsync(d => d.IsActive && d.Boundaries.Contains(p), ct);
     }
+    public async Task<bool> IsPointInDistrictAsync(Point p, Guid districtId)
+    {
+        return await _context.Districts
+            .AnyAsync(d => d.Id == districtId && d.Boundaries.Contains(p));
+    }
 }
