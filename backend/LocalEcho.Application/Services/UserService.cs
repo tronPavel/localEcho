@@ -22,56 +22,52 @@ public class UserService : IUserService
         _districtRepository = districtRepository;
     }
 
-    public async Task<UserProfileDto> GetProfileAsync(Guid userId)
-    {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден или был удален."); 
-        var roles = await _identityRepository.GetRolesAsync(user);
-        var district = await _districtRepository.GetByIdAsync(user.DistrictId ?? Guid.Empty);
-        
-        DistrictDto? districtDto = null;
-        if (district != null)
-        {
-            districtDto = new DistrictDto(
-                district.Id, 
-                district.Name, 
-                district.Description, 
-                district.Centroid.Y, 
-                district.Centroid.X, 
-                district.IconColor);
-        }
+  public async Task<UserProfileDto> GetProfileAsync(Guid userId)
+{
+    var user = await _userRepository.GetByIdAsync(userId) 
+               ?? throw new KeyNotFoundException("Пользователь не найден."); 
+               
+    var roles = await _identityRepository.GetRolesAsync(user);
+    var district = user.DistrictId.HasValue 
+        ? await _districtRepository.GetByIdAsync(user.DistrictId.Value) 
+        : null;
+    
+    DistrictDto? districtDto = district != null ? new DistrictDto(
+        district.Id, district.Name, district.Description, 
+        district.Centroid.Y, district.Centroid.X, district.IconColor) : null;
 
-        return new UserProfileDto(
-            user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress,
-            user.IsVerified, user.Points, user.CreatedAt, districtDto, roles
-        );
-    }
+    return new UserProfileDto(
+        user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress,
+        user.IsVerified, user.Points, user.CreatedAt, districtDto, roles,
+        user.HomeLocation?.Y, user.HomeLocation?.X // Возвращаем Lat/Lng
+    );
+}
 
-    public async Task ChangeDistrictAsync(Guid userId, ChangeDistrictDto dto)
-    {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден.");
-            
-        var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
-                       ?? throw new KeyNotFoundException("Указанный район не существует.");
-        user.DistrictId = dto.DistrictId;
+public async Task ChangeDistrictAsync(Guid userId, ChangeDistrictDto dto)
+{
+    var user = await _userRepository.GetByIdAsync(userId) 
+               ?? throw new KeyNotFoundException("Пользователь не найден.");
         
-        user.HomeLocation = district.Centroid; 
-        
-        if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
+    var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
+                   ?? throw new KeyNotFoundException("Указанный район не существует.");
+                   
+    user.DistrictId = dto.DistrictId;
+    
+    if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
 
-        await _userRepository.UpdateAsync(user);
-    }
+    await _userRepository.UpdateAsync(user);
+}
 
-    public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
-    {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден.");
-        if (dto.Name != null) user.Name = dto.Name; 
-        if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
-        
-        await _userRepository.UpdateAsync(user);
-    }
+public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
+{
+    var user = await _userRepository.GetByIdAsync(userId) 
+               ?? throw new KeyNotFoundException("Пользователь не найден.");
+               
+    if (dto.Name != null) user.Name = dto.Name; 
+    if (dto.HomeAddress != null) user.HomeAddress = dto.HomeAddress;
+    
+    await _userRepository.UpdateAsync(user);
+}
 
     public async Task UpdateAvatarAsync(Guid userId, string avatarUrl)
     {

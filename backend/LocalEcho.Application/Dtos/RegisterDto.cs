@@ -18,9 +18,8 @@ public record RegisterDto
 
     [Required]
     public string Name { get; init; } = string.Empty; 
-
-    [Required]
-    public Guid DistrictId { get; init; }
+    
+    public Guid? DistrictId { get; init; }
 
     public string? HomeAddress { get; init; }
 }

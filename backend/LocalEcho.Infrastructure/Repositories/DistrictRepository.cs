@@ -3,6 +3,7 @@ using LocalEcho.Core.Interfaces;
 using LocalEcho.Infrastructure.Data;
 using LocalEcho.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Infrastructure.Repositories;
 
@@ -24,4 +25,9 @@ public class DistrictRepository : IDistrictRepository
 
     public async Task AddAsync(District district, CancellationToken ct = default)
         => await _context.Districts.AddAsync(district, ct);
+    public async Task<District?> GetDistrictByCoordinatesAsync(Point p, CancellationToken ct = default)
+    {
+        return await _context.Districts
+            .FirstOrDefaultAsync(d => d.IsActive && d.Boundaries.Contains(p), ct);
+    }
 }

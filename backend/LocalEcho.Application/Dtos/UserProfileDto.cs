@@ -10,5 +10,7 @@ public record UserProfileDto(
     int Points,
     DateTime CreatedAt,
     DistrictDto? District,
-    IList<string> Roles
+    IList<string> Roles,
+    double? Latitude, 
+    double? Longitude  
 );

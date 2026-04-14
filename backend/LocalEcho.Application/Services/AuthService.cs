@@ -40,8 +40,11 @@ public class AuthService : IAuthService
         if (existingUser != null) 
             throw new BadRequestException("Пользователь с таким Email уже зарегистрирован.");
 
-        var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
-                       ?? throw new KeyNotFoundException("Указанный район не существует.");
+        if (dto.DistrictId.HasValue)
+        {
+            var districtExists = await _districtRepository.GetByIdAsync(dto.DistrictId.Value);
+            if (districtExists == null) throw new KeyNotFoundException("Указанный район не существует.");
+        }
 
         var user = new ApplicationUser
         {
@@ -50,7 +53,7 @@ public class AuthService : IAuthService
             Name = dto.Name,
             DistrictId = dto.DistrictId,
             HomeAddress = dto.HomeAddress,
-            HomeLocation = district.Boundaries.Centroid, 
+            HomeLocation = null,
             CreatedAt = DateTime.UtcNow,
             IsVerified = false,
             Points = 0
@@ -116,12 +119,18 @@ public class AuthService : IAuthService
 
         await _tokenRepository.SetRefreshTokenAsync(user, refreshToken);
 
-        var districtName = await _districtRepository.GetNameByIdAsync(user.DistrictId ?? Guid.Empty);
+        double? lat = user.HomeLocation?.Y;
+        double? lng = user.HomeLocation?.X;
+
+        var districtName = user.DistrictId.HasValue 
+            ? await _districtRepository.GetNameByIdAsync(user.DistrictId.Value) 
+            : null;
 
         return new AuthResponseDto(
             token, refreshToken, DateTime.UtcNow.AddMinutes(GetTokenLifetime()),
             user.Id.ToString(), user.Email!, user.Name ?? "User", user.AvatarUrl,
-            user.DistrictId, districtName, user.IsVerified, user.Points, userRoles.ToList()
+            user.DistrictId, districtName, user.IsVerified, user.Points, userRoles.ToList(),
+            lat, lng 
         );
     }
 

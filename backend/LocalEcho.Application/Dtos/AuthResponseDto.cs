@@ -12,5 +12,7 @@ public record AuthResponseDto(
     string? DistrictName,
     bool IsVerified,
     int Points,
-    List<string> Roles
+    List<string> Roles,
+    double? Latitude,  
+    double? Longitude  
 );

@@ -67,12 +67,10 @@ public class MarkerRepository : IMarkerRepository
                     filter.MinLat!.Value, filter.MaxLat!.Value)
             );
             
-            // EF Core без всяких ValueConverters автоматически сделает:
-            // WHERE m."Location" && @boundingBox AND ST_Intersects(m."Location", @boundingBox)
+           
             query = query.Where(m => m.Location.Intersects(boundingBox));
         }
 
-        // Выдаем самые свежие проблемы
         query = query.OrderByDescending(m => m.CreatedAt);
 
         return await query

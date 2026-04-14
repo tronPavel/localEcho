@@ -42,7 +42,7 @@ public class FileService : IFileService
                 headerBytes.Take(signature.Length).SequenceEqual(signature));
 
             if (!isMatch)
-                throw new ArgumentException("Поддельный файл: содержимое не соответствует расширению.");
+                throw new ArgumentException("содержимое не соответствует расширению.");
             
             fileStream.Position = 0; 
         }
