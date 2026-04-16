@@ -5,3 +5,10 @@ export const getDistricts = async (): Promise<DistrictDto[]> => {
     const response = await api.get('/districts');
     return response.data.data;
 };
+
+export const findDistrictByCoords = async (lat: number, lng: number): Promise<DistrictDto> => {
+    const response = await api.get('/districts/find-by-coords', {
+        params: { lat, lng }
+    });
+    return response.data.data;
+};

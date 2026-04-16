@@ -30,6 +30,8 @@ export interface AuthResponseDto {
     isVerified: boolean;
     points: number;
     roles: string[];
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface UserProfileDto {
@@ -40,10 +42,11 @@ export interface UserProfileDto {
     homeAddress?: string;
     isVerified: boolean;
     points: number;
-    lastSeen: string;
     createdAt: string;
     district?: DistrictDto;
     roles: string[];
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface UpdateProfileDto {
