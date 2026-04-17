@@ -7,10 +7,12 @@ namespace LocalEcho.Infrastructure.Repositories;
 public class IdentityRepository : IIdentityRepository, ITokenRepository
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
 
-    public IdentityRepository(UserManager<ApplicationUser> userManager)
+    public IdentityRepository(UserManager<ApplicationUser> userManager,  RoleManager<ApplicationRole> roleManager)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
     }
 
 

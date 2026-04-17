@@ -17,8 +17,10 @@ public class Marker
     public Guid DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-    public virtual ICollection<MarkerImage> Images { get; private set; } = new List<MarkerImage>();
     public int Rating { get; private set; } = 0;
+    
+    public virtual ICollection<MarkerImage> Images { get; private set; } = new List<MarkerImage>();
+    public virtual MarkerResolution? Resolution { get; private set; }
     
     public ApplicationUser? Creator { get; private set; }
 
@@ -46,23 +48,33 @@ public class Marker
         return new Marker(title, location, category, createdByUserId, districtId, description);
     }
 
-    public void UpdateDescription(string? newDescription)
+    public void UpdateContent(string title, string? description)
     {
-        newDescription = newDescription?.Trim();
-        if (newDescription?.Length > 500) throw new ArgumentException("Description too long");
-        if (Description == newDescription) return;
-        Description = newDescription;
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Заголовок не может быть пустым");
+        Title = title.Trim();
+        Description = description?.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
-    
-    public void UpdateRating(int newRating) => Rating = newRating;
 
     public void ChangeStatus(MarkerStatus newStatus)
     {
-        if (!Enum.IsDefined(newStatus)) throw new ArgumentException("Invalid status");
-        if (Status == MarkerStatus.Resolved && newStatus == MarkerStatus.Active) throw new InvalidOperationException("Cannot reopen");
+        if (Status == MarkerStatus.Resolved && newStatus != MarkerStatus.Resolved) 
+            throw new InvalidOperationException("Нельзя открыть заново уже решенную проблему.");
+        
         if (Status == newStatus) return;
         Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    
+    public void UpdateRating(int newRating) => Rating = newRating;
+    
+    public void SetResolution(MarkerResolution resolution)
+    {
+        if (Status == MarkerStatus.Resolved) 
+            throw new InvalidOperationException("Метка уже имеет решение.");
+            
+        Resolution = resolution;
+        ChangeStatus(MarkerStatus.Resolved);
     }
 }

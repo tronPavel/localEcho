@@ -20,9 +20,12 @@ public class MarkerRepository : IMarkerRepository
 
     public async Task<Marker?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await _context.Markers.FirstOrDefaultAsync(m => m.Id == id, ct);
+        return await _context.Markers
+            .Include(m => m.Images)
+            .Include(m => m.Resolution)
+            .ThenInclude(r => r.Images)
+            .FirstOrDefaultAsync(m => m.Id == id, ct);
     }
-
     public async Task AddAsync(Marker marker, CancellationToken ct = default)
     {
         await _context.Markers.AddAsync(marker, ct);
@@ -90,7 +93,10 @@ public class MarkerRepository : IMarkerRepository
     {
         return await _context.Markers
             .AsNoTracking()
-            .Include(m => m.Images) 
+            .Include(m => m.Images)
+            .Include(m => m.Resolution)
+            .ThenInclude(r => r.Images)
+            .Include(m => m.Resolution) // Чтобы получить имя того, кто решил (нужно будет джойнить юзера в будущем)
             .Where(m => m.Id == markerId)
             .Select(m => new MarkerDetail(
                 m,
@@ -103,5 +109,10 @@ public class MarkerRepository : IMarkerRepository
                     : 0
             ))
             .FirstOrDefaultAsync(ct);
+    }
+    public Task DeleteAsync(Marker marker)
+    {
+        _context.Markers.Remove(marker);
+        return Task.CompletedTask;
     }
 }

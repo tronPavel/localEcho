@@ -55,7 +55,6 @@ public class AuthService : IAuthService
             HomeAddress = dto.HomeAddress,
             HomeLocation = null,
             CreatedAt = DateTime.UtcNow,
-            IsVerified = false,
             Points = 0
         };
 
@@ -109,7 +108,6 @@ public class AuthService : IAuthService
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.Name, user.Name ?? "User"), 
             new("DistrictId", user.DistrictId?.ToString() ?? ""),
-            new("IsVerified", user.IsVerified.ToString())
         };
         
         foreach (var role in userRoles) claims.Add(new Claim(ClaimTypes.Role, role));
@@ -129,7 +127,7 @@ public class AuthService : IAuthService
         return new AuthResponseDto(
             token, refreshToken, DateTime.UtcNow.AddMinutes(GetTokenLifetime()),
             user.Id.ToString(), user.Email!, user.Name ?? "User", user.AvatarUrl,
-            user.DistrictId, districtName, user.IsVerified, user.Points, userRoles.ToList(),
+            user.DistrictId, districtName, user.Points, userRoles.ToList(),
             lat, lng 
         );
     }
@@ -174,6 +172,6 @@ public class AuthService : IAuthService
         return principal;
     }
 
-    private int GetTokenLifetime() => _configuration.GetValue<int>("JwtSettings:TokenLifetimeMinutes", 60);
+    private int GetTokenLifetime() => _configuration.GetValue("JwtSettings:TokenLifetimeMinutes", 60);
 }
 

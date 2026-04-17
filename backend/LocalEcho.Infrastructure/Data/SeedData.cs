@@ -75,7 +75,6 @@ public static class SeedData
                     HomeLocation = district.Centroid,
                     CreatedAt = DateTime.UtcNow,
                     EmailConfirmed = true,
-                    IsVerified = role != "User",
                     AvatarUrl = avatarKey != null && images.TryGetValue(avatarKey, out var url) ? url : null,
                     Points = random.Next(10, 100) 
                 };

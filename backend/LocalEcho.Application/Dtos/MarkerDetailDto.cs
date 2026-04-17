@@ -15,5 +15,6 @@ public record MarkerDetailDto(
     int Rating,
     int UserVote,
     DateTime CreatedAt,
-    DateTime? UpdatedAt
+    DateTime? UpdatedAt,
+    MarkerResolutionDto? Resolution 
 );

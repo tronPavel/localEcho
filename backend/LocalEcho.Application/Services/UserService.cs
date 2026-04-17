@@ -44,8 +44,7 @@ public class UserService : IUserService
         district.Centroid.Y, district.Centroid.X, district.IconColor) : null;
 
     return new UserProfileDto(
-        user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress,
-        user.IsVerified, user.Points, user.CreatedAt, districtDto, roles,
+        user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress, user.Points, user.CreatedAt, districtDto, roles,
         user.HomeLocation?.Y, user.HomeLocation?.X
     );
 }
@@ -55,25 +54,21 @@ public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
     var user = await _userRepository.GetByIdAsync(userId) 
                ?? throw new KeyNotFoundException("Пользователь не найден.");
 
-    // 1. Текстовые данные
     if (!string.IsNullOrWhiteSpace(dto.Name)) user.Name = dto.Name;
     
-    // 2. Район
     if (dto.DistrictId.HasValue && dto.DistrictId != user.DistrictId)
     {
-        var district = await _districtRepository.GetByIdAsync(dto.DistrictId.Value)
+        _ = await _districtRepository.GetByIdAsync(dto.DistrictId.Value)
                        ?? throw new KeyNotFoundException("Район не найден.");
         user.DistrictId = dto.DistrictId;
     }
 
-    // 3. Адрес и координаты
     if (!string.IsNullOrEmpty(dto.HomeAddress) && dto.HomeAddress != user.HomeAddress)
     {
         user.HomeAddress = dto.HomeAddress;
-        await SyncCoordinatesAsync(user); // Вызов существующей логики геокодера
+        await SyncCoordinatesAsync(user); 
     }
 
-    // 4. Аватар (атомарно)
     if (dto.AvatarFile != null)
     {
         var oldAvatarUrl = user.AvatarUrl;
@@ -85,7 +80,7 @@ public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
 
         if (!string.IsNullOrEmpty(oldAvatarUrl))
         {
-            await _fileService.DeleteFileAsync(oldAvatarUrl); // Подчищаем старое
+            await _fileService.DeleteFileAsync(oldAvatarUrl);
         }
     }
 

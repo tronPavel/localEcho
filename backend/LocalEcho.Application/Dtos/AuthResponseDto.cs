@@ -10,7 +10,6 @@ public record AuthResponseDto(
     string? AvatarUrl,
     Guid? DistrictId,
     string? DistrictName,
-    bool IsVerified,
     int Points,
     List<string> Roles,
     double? Latitude,  

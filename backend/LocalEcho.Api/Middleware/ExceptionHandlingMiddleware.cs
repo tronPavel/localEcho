@@ -50,9 +50,9 @@ public class ExceptionHandlingMiddleware
                 detail = "Недействительный или поврежденный токен авторизации.";
                 break;
             case UnauthorizedAccessException:
-                statusCode = (int)HttpStatusCode.Forbidden; 
+                statusCode = (int)HttpStatusCode.Forbidden; // 403
                 title = "Forbidden";
-                detail = exception.Message;
+                detail = "У вас нет прав для выполнения этого действия над ресурсом.";
                 break;
 
             case ArgumentException: 

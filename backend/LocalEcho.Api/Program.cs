@@ -134,8 +134,11 @@ builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("User", policy => policy.RequireRole("User"));
+    options.AddPolicy("Official", policy => policy.RequireRole("Official"));
     options.AddPolicy("Moderator", policy => policy.RequireRole("Moderator"));
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+    
+    options.AddPolicy("StaffOnly", policy => policy.RequireRole("Official", "Moderator", "Admin"));
 });
 
 var app = builder.Build();

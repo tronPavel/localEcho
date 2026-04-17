@@ -1,5 +1,4 @@
 using LocalEcho.Application.Dtos;
-using LocalEcho.Core.Entities;
 
 namespace LocalEcho.Application.Interfaces;
 
@@ -11,8 +10,11 @@ public interface IMarkerService
     
     Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId);
     
-    Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto);
-    Task ChangeStatusAsync(Guid id, MarkerStatus newStatus);
+    Task UpdateMarkerAsync(Guid id, UpdateMarkerDto dto, Guid userId);
+
+    Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId);
     
     Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId);
+    
+    Task DeleteMarkerAsync(Guid id, Guid userId);
 }

@@ -52,6 +52,24 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                 .WithMany(m => m.Images)
                 .HasForeignKey(ei => ei.MarkerId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<MarkerResolution>()
+                .WithMany(r => r.Images)
+                .HasForeignKey(ei => ei.MarkerResolutionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        modelBuilder.Entity<MarkerResolution>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.HasOne(r => r.Marker)
+                .WithOne(m => m.Resolution)
+                .HasForeignKey<MarkerResolution>(r => r.MarkerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(r => r.ResolvedByUser)
+                .WithMany() 
+                .HasForeignKey(r => r.ResolvedByUserId)
+                .OnDelete(DeleteBehavior.Restrict); 
         });
         
         modelBuilder.Entity<District>(entity =>

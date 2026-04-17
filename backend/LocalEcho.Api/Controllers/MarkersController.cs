@@ -1,8 +1,8 @@
+using System.Security.Claims;
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace LocalEcho.API.Controllers;
 
@@ -14,40 +14,18 @@ public class MarkersController : ControllerBase
 
     public MarkersController(IMarkerService service)
     {
-        _service = service ?? throw new ArgumentNullException(nameof(service));
+        _service = service;
     }
 
-    private Guid? GetCurrentUserId()
-    {
-        var idStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return string.IsNullOrEmpty(idStr) ? null : Guid.Parse(idStr);
-    }
+    private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    private Guid GetCurrentDistrictId()
-    {
-        var districtStr = User.FindFirst("DistrictId")?.Value;
-        return string.IsNullOrEmpty(districtStr) ? Guid.Empty : Guid.Parse(districtStr);
-    }
-    
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create([FromForm] CreateMarkerDto dto) // [FromForm] вместо [FromBody]
+    public async Task<IActionResult> Create([FromForm] CreateMarkerDto dto)
     {
-        var userId = GetCurrentUserId()!.Value;
-        var districtId = GetCurrentDistrictId();
-
-        var markerId = await _service.CreateMarkerAsync(dto, userId, districtId);
-        return CreatedAtAction(nameof(GetById), new { id = markerId }, null);
-    }
-    
-    [HttpGet("{id:guid}")]
-    [AllowAnonymous] 
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var userId = GetCurrentUserId();
-        
-        var detailDto = await _service.GetMarkerDetailsAsync(id, userId);
-        return Ok(detailDto);
+        var districtId = Guid.Parse(User.FindFirst("DistrictId")?.Value ?? Guid.Empty.ToString());
+        var id = await _service.CreateMarkerAsync(dto, GetUserId(), districtId);
+        return CreatedAtAction(nameof(GetById), new { id }, null);
     }
 
     [HttpGet]
@@ -56,14 +34,49 @@ public class MarkersController : ControllerBase
     {
         var markers = await _service.GetMapMarkersAsync(query);
         return Ok(markers);
-    }[HttpPost("{id:guid}/vote")]
-    [Authorize]
-    public async Task<IActionResult> Vote(Guid id,[FromBody] VoteDto dto)
+    }
+
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var voterId = GetCurrentUserId()!.Value;
-        
-        await _service.VoteAsync(id, dto, voterId);
-        
-        return Ok(new { message = "Голос успешно учтен" });
+        // Пытаемся достать UserId, если юзер залогинен, чтобы показать его голос (UserVote)
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Guid? userId = string.IsNullOrEmpty(userIdStr) ? null : Guid.Parse(userIdStr);
+
+        var detail = await _service.GetMarkerDetailsAsync(id, userId);
+        return Ok(detail);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Update(Guid id, [FromForm] UpdateMarkerDto dto)
+    {
+        await _service.UpdateMarkerAsync(id, dto, GetUserId());
+        return Ok(new { message = "Метка обновлена" });
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    [Authorize]
+    public async Task<IActionResult> ChangeStatus(Guid id, [FromForm] ChangeStatusDto dto)
+    {
+        await _service.ChangeStatusAsync(id, dto, GetUserId());
+        return Ok(new { message = "Статус обновлен" });
+    }
+
+    [HttpPost("{id:guid}/vote")]
+    [Authorize]
+    public async Task<IActionResult> Vote(Guid id, [FromBody] VoteDto dto)
+    {
+        await _service.VoteAsync(id, dto, GetUserId());
+        return Ok(new { message = "Голос учтен" });
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _service.DeleteMarkerAsync(id, GetUserId());
+        return NoContent();
     }
 }

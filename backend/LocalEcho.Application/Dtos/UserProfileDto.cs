@@ -6,7 +6,6 @@ public record UserProfileDto(
     string Name,
     string? AvatarUrl,
     string? HomeAddress,
-    bool IsVerified,
     int Points,
     DateTime CreatedAt,
     DistrictDto? District,

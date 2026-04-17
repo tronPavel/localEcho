@@ -1,3 +1,10 @@
+using Microsoft.AspNetCore.Http;
+
 namespace LocalEcho.Application.Dtos;
 
-public record UpdateDescriptionDto(string? Description);
+public record UpdateMarkerDto(
+    string Title,
+    string? Description,
+    List<IFormFile>? NewImageFiles,  
+    List<string>? KeepImageUrls      
+);

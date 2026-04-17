@@ -25,15 +25,4 @@ public class FilesController : ControllerBase
         var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
         return Ok(new { url });
     }
-
-    [HttpDelete("delete")]
-    public async Task<IActionResult> DeleteFile([FromBody] DeleteFileDto dto)
-    {
-        if (string.IsNullOrEmpty(dto.Url)) return BadRequest();
-        
-        if (!dto.Url.StartsWith("/uploads/")) return Forbid("Нельзя удалять файлы из этой директории.");
-
-        await _fileService.DeleteFileAsync(dto.Url);
-        return NoContent();
-    }
 }
