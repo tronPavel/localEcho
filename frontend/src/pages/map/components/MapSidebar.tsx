@@ -1,6 +1,6 @@
 import { Select } from '@/shared/ui/Select/Select.tsx';
 import { useFilterStore } from '@/features/filter-markers/model/filterStore.ts';
-import styles from './MapPage.module.css';
+import styles from '../ui/MapPage.module.css';
 
 export const MapSidebar = () => {
     const { category, status, setCategory, setStatus } = useFilterStore();

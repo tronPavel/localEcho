@@ -40,3 +40,36 @@
     height: 100%;
     width: 100%;
 }
+
+.mapWrapper {
+    flex: 1;
+    position: relative;
+    /* Убедись, что высота зафиксирована, чтобы дочерний 100% работал корректно */
+    height: 100%;
+}
+
+.loadingIndicator {
+    /* Главное решение */
+    position: absolute;
+    top: 20px;         /* Отступ от верха карты */
+    left: 50%;         /* Центрирование */
+    transform: translateX(-50%); /* Центрирование */
+    z-index: 1000;     /* Должен быть выше слоев карты (Leaflet обычно 400-800) */
+
+    /* Декор, чтобы выглядело аккуратно */
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    border: 1px solid #e5e7eb;
+    pointer-events: none; /* Чтобы индикатор не мешал кликать по карте под ним */
+}
+
+.loadingIndicator span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

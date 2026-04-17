@@ -1,21 +1,56 @@
+/* Базовый контейнер */
 .avatar {
     border-radius: 50%;
-    background-color: #ccc;
+    background-color: #e5e7eb; /* Более современный светло-серый */
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-weight: bold;
+    color: #4b5563;
+    font-weight: 600;
     overflow: hidden;
+    flex-shrink: 0; /* Чтобы аватар не сжимался в flex-блоках */
     transition: transform 0.2s ease;
+    border: 1px solid rgba(0,0,0,0.05); /* Легкий контур */
 }
 
+/* Эффект при наведении (только если это не заглушка, или по желанию) */
 .avatar:hover {
     transform: scale(1.05);
 }
 
+/* Изображение внутри */
 .avatar img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    display: block;
+    object-fit: cover; /* Ключевое свойство: заполняет круг, обрезая лишнее */
+}
+
+/* Плейсхолдер для букв */
+.placeholder {
+    user-select: none;
+    text-transform: uppercase;
+}
+
+/* ВАРИАЦИИ РАЗМЕРОВ */
+
+/* Маленький (для Лидерборда и мелких меток) */
+.small {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+/* Средний (дефолтный) */
+.medium {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+}
+
+/* Большой (для профиля) */
+.large {
+    width: 120px;
+    height: 120px;
+    font-size: 42px;
 }

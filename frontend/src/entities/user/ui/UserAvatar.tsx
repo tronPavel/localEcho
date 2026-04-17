@@ -1,25 +1,27 @@
 import styles from './UserAvatar.module.css';
-import type {UserDto} from "../model/types.ts";
-import {getImageUrl} from "@/shared/api/apiInstance.ts";
+import { getImageUrl } from '@/shared/api/apiInstance';
+
+interface AvatarUser {
+    name?: string;
+    avatarUrl?: string | null;
+}
 
 interface UserAvatarProps {
-    user: UserDto;
+    user: AvatarUser;
     size?: 'small' | 'medium' | 'large';
 }
 
 export const UserAvatar = ({ user, size = 'medium' }: UserAvatarProps) => {
-    const avatarSize = {
-        small: 32,
-        medium: 48,
-        large: 64,
-    }[size];
+    const initials = user?.name?.charAt(0).toUpperCase() || '?';
+
+    const containerClasses = `${styles.avatar} ${styles[size]}`;
 
     return (
-        <div className={styles.avatar} style={{ width: avatarSize, height: avatarSize }}>
-            {user.avatarUrl ? (
+        <div className={containerClasses}>
+            {user?.avatarUrl ? (
                 <img src={getImageUrl(user.avatarUrl)} alt={user.name} />
             ) : (
-                <span>{user.name[0]}</span>
+                <span className={styles.placeholder}>{initials}</span>
             )}
         </div>
     );

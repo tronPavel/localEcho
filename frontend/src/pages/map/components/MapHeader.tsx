@@ -1,6 +1,6 @@
-import { Button } from '@/shared/ui/Button/Button';
-import { useAuthStore } from '@/features/auth/model/authStore';
-import styles from './MapPage.module.css';
+import { Button } from '@/shared/ui/Button/Button.tsx';
+import { useAuthStore } from '@/features/auth/model/authStore.ts';
+import styles from '../ui/MapPage.module.css';
 
 interface MapHeaderProps {
     onOpenLeaderboard: () => void;
