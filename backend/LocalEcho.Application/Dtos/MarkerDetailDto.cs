@@ -6,17 +6,14 @@ public record MarkerDetailDto(
     Guid Id,
     string Title,
     string? Description,
-    string? ImageUrl,
+    List<string> ImageUrls, 
     MarkerCategory Category,
     MarkerStatus Status,
-    
     Guid CreatorId,
     string CreatorName,
     string? CreatorAvatarUrl,
-    
     int Rating,
     int UserVote,
-    
     DateTime CreatedAt,
     DateTime? UpdatedAt
 );

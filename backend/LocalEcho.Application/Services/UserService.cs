@@ -13,16 +13,20 @@ public class UserService : IUserService
     private readonly IDistrictRepository _districtRepository;
     private readonly IGeocodingService _geocodingService;
     private readonly IIdentityRepository _identityRepository;
+    private readonly IFileService _fileService;
+    
     public UserService(
         IUserRepository userRepository, 
         IIdentityRepository identityRepository, 
         IDistrictRepository districtRepository,
-        IGeocodingService geocodingService) 
+        IGeocodingService geocodingService,
+        IFileService fileService) 
     {
         _userRepository = userRepository;
         _districtRepository = districtRepository;
         _geocodingService = geocodingService;
         _identityRepository = identityRepository;
+        _fileService = fileService;
     }
 
   public async Task<UserProfileDto> GetProfileAsync(Guid userId)
@@ -42,44 +46,51 @@ public class UserService : IUserService
     return new UserProfileDto(
         user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress,
         user.IsVerified, user.Points, user.CreatedAt, districtDto, roles,
-        user.HomeLocation?.Y, user.HomeLocation?.X // Возвращаем Lat/Lng
+        user.HomeLocation?.Y, user.HomeLocation?.X
     );
 }
 
 public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
+{
+    var user = await _userRepository.GetByIdAsync(userId) 
+               ?? throw new KeyNotFoundException("Пользователь не найден.");
+
+    // 1. Текстовые данные
+    if (!string.IsNullOrWhiteSpace(dto.Name)) user.Name = dto.Name;
+    
+    // 2. Район
+    if (dto.DistrictId.HasValue && dto.DistrictId != user.DistrictId)
     {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден.");
-
-        if (dto.Name != null) user.Name = dto.Name;
-
-        if (!string.IsNullOrEmpty(dto.HomeAddress) && dto.HomeAddress != user.HomeAddress)
-        {
-            user.HomeAddress = dto.HomeAddress;
-            await SyncCoordinatesAsync(user);
-        }
-        
-        await _userRepository.UpdateAsync(user);
-    }
-
-    public async Task ChangeDistrictAsync(Guid userId, ChangeDistrictDto dto)
-    {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден.");
-            
-        var district = await _districtRepository.GetByIdAsync(dto.DistrictId) 
-                       ?? throw new KeyNotFoundException("Указанный район не существует.");
-        
+        var district = await _districtRepository.GetByIdAsync(dto.DistrictId.Value)
+                       ?? throw new KeyNotFoundException("Район не найден.");
         user.DistrictId = dto.DistrictId;
-        
-        if (!string.IsNullOrEmpty(user.HomeAddress))
-        {
-            await SyncCoordinatesAsync(user);
-        }
-
-        await _userRepository.UpdateAsync(user);
     }
 
+    // 3. Адрес и координаты
+    if (!string.IsNullOrEmpty(dto.HomeAddress) && dto.HomeAddress != user.HomeAddress)
+    {
+        user.HomeAddress = dto.HomeAddress;
+        await SyncCoordinatesAsync(user); // Вызов существующей логики геокодера
+    }
+
+    // 4. Аватар (атомарно)
+    if (dto.AvatarFile != null)
+    {
+        var oldAvatarUrl = user.AvatarUrl;
+        
+        using var stream = dto.AvatarFile.OpenReadStream();
+        var newUrl = await _fileService.SaveFileAsync(stream, dto.AvatarFile.FileName, "avatars");
+
+        user.AvatarUrl = newUrl;
+
+        if (!string.IsNullOrEmpty(oldAvatarUrl))
+        {
+            await _fileService.DeleteFileAsync(oldAvatarUrl); // Подчищаем старое
+        }
+    }
+
+    await _userRepository.UpdateAsync(user);
+}
     private async Task SyncCoordinatesAsync(ApplicationUser user)
     {
         if (string.IsNullOrEmpty(user.HomeAddress)) return;
@@ -104,11 +115,5 @@ public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
             user.HomeLocation = null;
         }
     }
-    public async Task UpdateAvatarAsync(Guid userId, string avatarUrl)
-    {
-        var user = await _userRepository.GetByIdAsync(userId) 
-                   ?? throw new KeyNotFoundException("Пользователь не найден.");
-        user.AvatarUrl = avatarUrl;
-        await _userRepository.UpdateAsync(user);
-    }
 }
+

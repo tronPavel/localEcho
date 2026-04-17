@@ -123,6 +123,9 @@ builder.Services.AddScoped<ITokenRepository>(sp => sp.GetRequiredService<Identit
 
 builder.Services.AddScoped<IFileService, FileService>();
 
+
+builder.Services.AddHttpClient<IGeocodingService, GeocodingService>();
+builder.Services.AddScoped<IGeocodingService, GeocodingService>();
 builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>(); 

@@ -88,7 +88,9 @@ public class MarkerRepository : IMarkerRepository
 
     public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)
     {
-        return await _context.Markers.AsNoTracking()
+        return await _context.Markers
+            .AsNoTracking()
+            .Include(m => m.Images) 
             .Where(m => m.Id == markerId)
             .Select(m => new MarkerDetail(
                 m,

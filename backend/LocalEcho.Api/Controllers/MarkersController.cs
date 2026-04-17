@@ -27,19 +27,20 @@ public class MarkersController : ControllerBase
     {
         var districtStr = User.FindFirst("DistrictId")?.Value;
         return string.IsNullOrEmpty(districtStr) ? Guid.Empty : Guid.Parse(districtStr);
-    }[HttpPost]
-    [Authorize(Policy = "User")]
-    public async Task<IActionResult> Create([FromBody] CreateMarkerDto dto)
+    }
+    
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> Create([FromForm] CreateMarkerDto dto) // [FromForm] вместо [FromBody]
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
         var userId = GetCurrentUserId()!.Value;
         var districtId = GetCurrentDistrictId();
 
         var markerId = await _service.CreateMarkerAsync(dto, userId, districtId);
-        
         return CreatedAtAction(nameof(GetById), new { id = markerId }, null);
-    }[HttpGet("{id:guid}")]
+    }
+    
+    [HttpGet("{id:guid}")]
     [AllowAnonymous] 
     public async Task<IActionResult> GetById(Guid id)
     {

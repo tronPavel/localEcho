@@ -13,33 +13,51 @@ public class MarkerService : IMarkerService
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly GeometryFactory _geometryFactory;
+    private readonly IFileService _fileService;
+    
 
     public MarkerService(
         IMarkerRepository markerRepository,
         IUserRepository userRepository,
         IUnitOfWork unitOfWork,
-        GeometryFactory geometryFactory)
+        GeometryFactory geometryFactory,
+        IFileService fileService)
     {
         _markerRepository = markerRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _geometryFactory = geometryFactory;
+        _fileService = fileService;
     }
 
     public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId)
     {
+        // 1. Создаем объект маркера в памяти
         var point = _geometryFactory.CreatePoint(new Coordinate(dto.Longitude, dto.Latitude));
-        
         var marker = Marker.Create(
             dto.Title, 
             point, 
             dto.Category, 
             userId,      
             districtId,   
-            dto.Description,
-            dto.ImageUrl
+            dto.Description
         );
 
+        // 2. Обрабатываем файлы ДО сохранения маркера
+        if (dto.ImageFiles != null && dto.ImageFiles.Count > 0)
+        {
+            foreach (var file in dto.ImageFiles)
+            {
+                using var stream = file.OpenReadStream();
+                var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
+            
+                // Просто добавляем в коллекцию объекта
+                marker.Images.Add(new MarkerImage(url, marker.Id));
+            }
+        }
+
+        // 3. Теперь сохраняем всё одним махом
+        // EF Core увидит маркер и его коллекцию Images и создаст правильные INSERT команды
         await _markerRepository.AddAsync(marker);
         await _unitOfWork.SaveChangesAsync(); 
 
@@ -68,9 +86,25 @@ public class MarkerService : IMarkerService
     public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
     {
         var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
-                     ?? throw new KeyNotFoundException("Метка не найдена или была удалена."); 
-                     
-        return new MarkerDetailDto(detail.Marker.Id, detail.Marker.Title, detail.Marker.Description, detail.Marker.ImageUrl, detail.Marker.Category, detail.Marker.Status, detail.Marker.CreatedByUserId, detail.Creator?.Name, detail.Creator?.AvatarUrl, detail.Marker.Rating, detail.UserVote, detail.Marker.CreatedAt, detail.Marker.UpdatedAt);
+                     ?? throw new KeyNotFoundException("Метка не найдена."); 
+                 
+        // Преобразуем коллекцию сущностей MarkerImage в список строк (URL)
+        var imageUrls = detail.Marker.Images.Select(img => img.Url).ToList();
+
+        return new MarkerDetailDto(
+            detail.Marker.Id, 
+            detail.Marker.Title, 
+            detail.Marker.Description, 
+            imageUrls,
+            detail.Marker.Category, 
+            detail.Marker.Status, 
+            detail.Marker.CreatedByUserId, 
+            detail.Creator?.Name ?? "Аноним", 
+            detail.Creator?.AvatarUrl, 
+            detail.Marker.Rating, 
+            detail.UserVote, 
+            detail.Marker.CreatedAt, 
+            detail.Marker.UpdatedAt);
     }
 
     public async Task UpdateDescriptionAsync(Guid id, UpdateDescriptionDto dto)

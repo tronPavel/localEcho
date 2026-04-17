@@ -10,6 +10,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<Marker> Markers => Set<Marker>();
     public DbSet<District> Districts => Set<District>();
     public DbSet<Vote> Votes => Set<Vote>();
+    
+    public DbSet<MarkerImage> MarkerImages => Set<MarkerImage>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -35,7 +37,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                   
             entity.Property(m => m.CreatedAt).IsRequired();
             entity.Property(m => m.Rating).IsRequired();
-            entity.Property(m => m.ImageUrl).HasMaxLength(2048);
             
             entity.HasIndex(m => m.Location).HasMethod("GIST");
             
@@ -43,6 +44,14 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                 .WithMany()
                 .HasForeignKey(m => m.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+    
+        modelBuilder.Entity<MarkerImage>(entity => {
+            entity.HasKey(ei => ei.Id);
+            entity.HasOne<Marker>()
+                .WithMany(m => m.Images)
+                .HasForeignKey(ei => ei.MarkerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         
         modelBuilder.Entity<District>(entity =>

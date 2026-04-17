@@ -114,7 +114,25 @@ public static class SeedData
                 var category = (MarkerCategory)categories.GetValue(random.Next(categories.Length))!;
                 var status = (MarkerStatus)statuses.GetValue(random.Next(statuses.Length))!;
 
-                string? imageUrl = category switch
+                // 1. Подготавливаем геометрию
+                var point = geoFactory.CreatePoint(new Coordinate(lng, lat));
+
+                // 2. Создаем маркер (теперь без URL картинки в аргументах)
+                var marker = Marker.Create(
+                    $"{category} в {district.Name}",
+                    point,
+                    category,
+                    author.Id,
+                    district.Id,
+                    $"Это реалистичный маркер #{i + 1}. Описание создано автоматически при наполнении базы."
+                );
+
+                marker.ChangeStatus(status);
+                context.Markers.Add(marker);
+                
+                // Чтобы получить Id маркера для связи, если мы используем GUID, EF генерирует его на месте.
+                // Добавляем картинку для категории
+                string? seedImageUrl = category switch
                 {
                     MarkerCategory.Issue => images.GetValueOrDefault("issue"),
                     MarkerCategory.Event => images.GetValueOrDefault("event"),
@@ -122,32 +140,25 @@ public static class SeedData
                     _ => null
                 };
 
-                var point = geoFactory.CreatePoint(new Coordinate(lng, lat));
-
-                var marker = Marker.Create(
-                    $"{category} в {district.Name}",
-                    point,
-                    category,
-                    author.Id,
-                    district.Id,
-                    $"Это реалистичный маркер #{i + 1}. Ситуация зафиксирована пользователем.",
-                    imageUrl
-                );
-
-                marker.ChangeStatus(status);
-                markers.Add(marker);
+                if (!string.IsNullOrEmpty(seedImageUrl))
+                {
+                    // 3. Создаем запись в таблице MarkerImages
+                    var markerImage = new MarkerImage(seedImageUrl, marker.Id);
+                    context.MarkerImages.Add(markerImage);
+                }
             }
-            context.Markers.AddRange(markers);
+            
+            // Сохраняем все маркеры и их картинки за один раз
             await context.SaveChangesAsync(); 
         }
-        else
-        {
-            markers = await context.Markers.ToListAsync();
-        }
 
-        if (!await context.Votes.AnyAsync() && markers.Any())
+        // Логика голосования (без изменений в структуре, так как она не завязана на картинки)
+        if (!await context.Votes.AnyAsync())
         {
-            foreach (var marker in markers)
+            // Перезагружаем список из базы, чтобы EF начал их отслеживать (track) корректно
+            var seededMarkers = await context.Markers.ToListAsync();
+
+            foreach (var marker in seededMarkers)
             {
                 int totalVotes = random.Next(0, 13);
                 if (totalVotes == 0) continue;
@@ -159,22 +170,23 @@ public static class SeedData
 
                 foreach (var voter in randomVoters)
                 {
+                    // Чтобы создатель не голосовал за самого себя
+                    if (voter.Id == marker.CreatedByUserId) continue;
+
                     bool isUpvote = random.NextDouble() > 0.3;
                     var vote = new Vote(marker.Id, voter.Id, isUpvote);
                     
                     context.Votes.Add(vote);
-                    
-                    int delta = isUpvote ? 1 : -1;
-                    ratingDelta += delta;
+                    ratingDelta += isUpvote ? 1 : -1;
                 }
 
                 marker.UpdateRating(ratingDelta);
-                context.Markers.Update(marker);
-
+                
                 if (markerCreator != null)
                 {
+                    // Важно: в будущем лучше использовать ExecuteUpdateAsync, 
+                    // но для сидов достаточно инкремента в памяти перед SaveChanges
                     markerCreator.Points += ratingDelta;
-                    context.Users.Update(markerCreator); 
                 }
             }
 
@@ -186,11 +198,12 @@ public static class SeedData
     {
         var result = new Dictionary<string, string>();
         var sourceDir = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "SeedImages");
-        var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var webRoot = env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 
         var avatarsDir = Path.Combine(webRoot, "avatars");
         var uploadsDir = Path.Combine(webRoot, "uploads");
 
+        // Убеждаемся, что папки существуют
         Directory.CreateDirectory(avatarsDir);
         Directory.CreateDirectory(uploadsDir);
 
@@ -203,6 +216,8 @@ public static class SeedData
 
             var isAvatar = key.Contains("avatar");
             var destDir = isAvatar ? avatarsDir : uploadsDir;
+            
+            // Формируем относительный путь для БД
             var url = isAvatar ? $"/avatars/{fileName}" : $"/uploads/{fileName}";
 
             var destPath = Path.Combine(destDir, fileName);

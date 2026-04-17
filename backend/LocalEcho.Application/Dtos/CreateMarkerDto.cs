@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using LocalEcho.Core.Entities;
 
 public record CreateMarkerDto(
@@ -5,5 +6,6 @@ public record CreateMarkerDto(
     double Latitude,
     double Longitude, 
     MarkerCategory Category, 
-    string? Description = null,
-    string? ImageUrl = null);
+    string? Description,
+    List<IFormFile>? ImageFiles 
+);

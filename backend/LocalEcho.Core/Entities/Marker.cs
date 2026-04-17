@@ -17,14 +17,14 @@ public class Marker
     public Guid DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
-    public string? ImageUrl { get; private set; }
+    public virtual ICollection<MarkerImage> Images { get; private set; } = new List<MarkerImage>();
     public int Rating { get; private set; } = 0;
     
     public ApplicationUser? Creator { get; private set; }
 
     private Marker() { }
 
-    private Marker(string title, Point location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description, string? imageUrl)
+    private Marker(string title, Point location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
@@ -35,7 +35,6 @@ public class Marker
         Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
         Status = MarkerStatus.Active;
         CreatedAt = DateTime.UtcNow;
-        ImageUrl = imageUrl;
         Rating = 0;
     }
 
@@ -44,7 +43,7 @@ public class Marker
         if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title required");
         if (location == null) throw new ArgumentNullException(nameof(location));
         
-        return new Marker(title, location, category, createdByUserId, districtId, description, imageUrl);
+        return new Marker(title, location, category, createdByUserId, districtId, description);
     }
 
     public void UpdateDescription(string? newDescription)
