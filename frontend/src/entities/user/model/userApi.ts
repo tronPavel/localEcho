@@ -1,5 +1,6 @@
 import { api } from "@/shared/api/apiInstance";
-import type { UserProfileDto, UpdateProfileDto, ChangeDistrictDto } from "@/features/auth/model/types";
+import type {UpdateProfileDto} from "@/entities/user/model/types.ts";
+import type {UserProfileDto} from "@/features/auth/model/types.ts";
 
 export const getMyProfile = async (): Promise<UserProfileDto> => {
     const response = await api.get('/users/profile');
@@ -7,19 +8,14 @@ export const getMyProfile = async (): Promise<UserProfileDto> => {
 };
 
 export const updateProfile = async (data: UpdateProfileDto) => {
-    await api.put('/users/profile', data);
-};
-
-export const changeDistrict = async (data: ChangeDistrictDto) => {
-    await api.post('/users/change-district', data);
-};
-
-export const uploadAvatar = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    if (data.name) formData.append('Name', data.name);
+    if (data.homeAddress) formData.append('HomeAddress', data.homeAddress);
+    if (data.districtId) formData.append('DistrictId', data.districtId);
+    if (data.avatarFile) formData.append('AvatarFile', data.avatarFile);
 
-    const response = await api.post('/users/avatar', formData, {
+    // Вызываем один метод PUT /profile
+    await api.put('/users/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.data.avatarUrl;
 };

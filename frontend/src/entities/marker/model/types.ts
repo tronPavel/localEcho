@@ -1,21 +1,3 @@
-/*export interface MarkerDto {
-    id: string;
-    title: string;
-    latitude: number;
-    longitude: number;
-    description?: string;
-    category: 'Issue' | 'Event' | 'Announcement';
-    status: 'Active' | 'InProgress' | 'Resolved';
-    rating: number;
-    userVote: number;
-    createdAt: string;
-    updatedAt?: string;
-    imageUrl?: string;
-
-    creatorName: string;
-    creatorAvatarUrl?: string;
-}*/
-
 export interface MarkerMapDto {
     id: string;
     latitude: number;
@@ -29,7 +11,7 @@ export interface MarkerDetailDto {
     id: string;
     title: string;
     description?: string;
-    imageUrl?: string;
+    imageUrls?: string[];
     category: 'Issue' | 'Event' | 'Announcement';
     status: 'Active' | 'InProgress' | 'Resolved';
 
@@ -50,5 +32,5 @@ export interface CreateMarkerDto {
     longitude: number;
     description?: string;
     category: 'Issue' | 'Event' | 'Announcement';
-    imageUrl?: string;
+    imageFiles?: File[];
 }

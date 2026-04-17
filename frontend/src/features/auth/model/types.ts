@@ -34,31 +34,6 @@ export interface AuthResponseDto {
     longitude?: number;
 }
 
-export interface UserProfileDto {
-    id: string;
-    email: string;
-    name: string;
-    avatarUrl?: string;
-    homeAddress?: string;
-    isVerified: boolean;
-    points: number;
-    createdAt: string;
-    district?: DistrictDto;
-    roles: string[];
-    latitude?: number;
-    longitude?: number;
-}
-
-export interface UpdateProfileDto {
-    name?: string;
-    homeAddress?: string;
-}
-
-export interface ChangeDistrictDto {
-    districtId: string;
-    homeAddress?: string;
-}
-
 export interface DistrictDto {
     id: string;
     name: string;

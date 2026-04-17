@@ -1,3 +1,34 @@
+/* Контейнер для Swiper */
+.slider {
+    width: 100%;
+    height: 320px; /* Фиксированная высота, чтобы не "прыгало" */
+    margin-bottom: 16px;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden; /* Важно: скрывает картинки вне активного слайда */
+    position: relative; /* Чтобы стрелочки были внутри */
+    background: #f3f4f6;
+}
+
+.slideImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Картинка заполняет область без искажений */
+    display: block;
+}
+
+/* Настройка цвета кнопок навигации и точек (делаем их видимыми) */
+/* Используем :global, так как Swiper генерирует свои классы внутри */
+.slider :global(.swiper-button-next),
+.slider :global(.swiper-button-prev) {
+    color: #3b82f6;
+    transform: scale(0.7); /* Чуть уменьшаем стрелки */
+}
+
+.slider :global(.swiper-pagination-bullet-active) {
+    background: #3b82f6;
+}
+
+
 .container {
     max-width: 520px;
     width: 100%;

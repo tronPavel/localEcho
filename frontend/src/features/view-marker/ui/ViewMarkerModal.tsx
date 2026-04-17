@@ -6,6 +6,12 @@ import styles from './ViewMarkerModal.module.css';
 import { useMarkerStore } from '../../../entities/marker/model/store';
 import { Modal } from '../../../shared/ui/Modal/Modal';
 import {getImageUrl} from "@/shared/api/apiInstance.ts";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 export const ViewMarkerModal = () => {
     const { selectedMarker, setSelectedMarker } = useMarkerStore();
@@ -27,10 +33,26 @@ export const ViewMarkerModal = () => {
                     <div className={styles.error}>Ошибка загрузки данных</div>
                 ) : (
                     <>
-                        {fullMarker.imageUrl ? (
-                            <img src={getImageUrl(fullMarker.imageUrl)} alt={fullMarker.title} className={styles.image} />
+                        {fullMarker.imageUrls && fullMarker.imageUrls.length > 0 ? (
+                            <Swiper
+                                modules={[Navigation, Pagination]}
+                                navigation={fullMarker.imageUrls.length > 1} // стрелки только если > 1 фото
+                                pagination={{ clickable: true }}
+                                slidesPerView={1}
+                                className={styles.slider}
+                            >
+                                {fullMarker.imageUrls.map((url, i) => (
+                                    <SwiperSlide key={url || i}>
+                                        <img
+                                            src={getImageUrl(url)}
+                                            alt={fullMarker.title}
+                                            className={styles.slideImage}
+                                        />
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
                         ) : (
-                            <div className={styles.noImage}>Фото отсутствует</div>
+                            <div className={styles.noImage}>Нет фото</div>
                         )}
 
                         <div className={styles.header}>

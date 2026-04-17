@@ -1,4 +1,5 @@
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/shared/ui/Button/Button';
 import { Input } from '@/shared/ui/Input/Input';
@@ -8,8 +9,6 @@ import { createMarkerSchema } from '../lib/validateMarker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createMarker } from '../model/createMarkerApi';
 import { useCreateMarkerStore } from '../model/createMarkerStore';
-import {deleteFile, uploadFile} from '@/features/upload-file/model/uploadApi';
-import { useState } from 'react';
 import styles from './CreateMarkerForm.module.css';
 
 interface FormData {
@@ -22,73 +21,61 @@ export const CreateMarkerForm = () => {
     const { pendingPosition, closeModal } = useCreateMarkerStore();
     const queryClient = useQueryClient();
 
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
     const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
         resolver: zodResolver(createMarkerSchema),
         defaultValues: { category: 'Issue' },
     });
 
-    const[selectedFile, setSelectedFile] = useState<File | null>(null);
-    const[previewUrl, setPreviewUrl] = useState<string | null>(null);
-
     const mutation = useMutation({
-        mutationFn: async (data: FormData) => {
-            let imageUrl: string | undefined = undefined;
-
-            if (selectedFile) {
-                imageUrl = await uploadFile(selectedFile);
-            }
-
-            try {
-                await createMarker({
-                    title: data.title,
-                    description: data.description,
-                    category: data.category,
-                    latitude: pendingPosition!.lat,
-                    longitude: pendingPosition!.lng,
-                    imageUrl,
-                });
-            } catch (error) {
-                if (imageUrl) {
-                    console.log("Откат: удаляем осиротевшую картинку...", imageUrl);
-                    await deleteFile(imageUrl).catch(e => console.error("Не удалось удалить сироту:", e));
-                }
-
-                throw error;
-            }
-        },
+        mutationFn: (data: FormData) => createMarker({
+            ...data,
+            latitude: pendingPosition!.lat,
+            longitude: pendingPosition!.lng,
+            imageFiles: selectedFiles // Передаем массив в API
+        }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['markers'] });
-            closeModal();
             reset();
-            setSelectedFile(null);
-            setPreviewUrl(null);
-        },
-        onError: (err: any) => {
-            //alert('Ошибка: ' + (err?.response?.data?.message || err.message || 'Неизвестная ошибка'));
+            setSelectedFiles([]);
+            setPreviewUrls([]);
+            closeModal();
         },
     });
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            setSelectedFiles(prev => [...prev, ...files]);
 
-    const onSubmit: SubmitHandler<FormData> = (data) => {
-        mutation.mutate(data);
+            const newPreviews = files.map(file => URL.createObjectURL(file));
+            setPreviewUrls(prev => [...prev, ...newPreviews]);
+        }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
     if (!pendingPosition) return <div>Выберите точку на карте</div>;
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+        <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className={styles.form}>
             <h2>Добавить метку</h2>
 
-            <Input placeholder="Заголовок *" {...register('title')} error={errors.title?.message} />
-            <Textarea placeholder="Описание" {...register('description')} />
+            <Input
+                placeholder="Заголовок *"
+                {...register('title')}
+                error={errors.title?.message}
+            />
+
+            <Textarea
+                placeholder="Описание"
+                {...register('description')}
+            />
 
             <Select {...register('category')}>
                 <option value="Issue">Проблема</option>
@@ -96,20 +83,49 @@ export const CreateMarkerForm = () => {
                 <option value="Announcement">Объявление</option>
             </Select>
 
-            <Input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-            />
+            <div className={styles.imageSection}>
+                <label className={styles.fileLabel}>
+                    Добавить фотографии
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                    />
+                </label>
 
-            {previewUrl && <img src={previewUrl} alt="Preview" className={styles.preview} />}
+                {/* Сетка превью */}
+                <div className={styles.previewsGrid}>
+                    {previewUrls.map((url, i) => (
+                        <div key={url} className={styles.previewItem}>
+                            <img src={url} alt="preview" />
+                            <button
+                                type="button"
+                                className={styles.removeBadge}
+                                onClick={() => removeFile(i)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             <div className={styles.actions}>
-                <Button variant="secondary" onClick={closeModal} disabled={mutation.isPending}>
+                <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={closeModal}
+                    disabled={mutation.isPending}
+                >
                     Отмена
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
-                    {mutation.isPending ? 'Создаём...' : 'Создать метку'}
+                <Button
+                    type="submit"
+                    disabled={mutation.isPending}
+                >
+                    {mutation.isPending ? 'Загрузка...' : 'Создать метку'}
                 </Button>
             </div>
         </form>
