@@ -35,23 +35,44 @@ public class MarkerService : IMarkerService
 
     public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId)
     {
-        var point = _geometryFactory.CreatePoint(new Coordinate(dto.Longitude, dto.Latitude));
-        var marker = Marker.Create(
-            dto.Title, 
-            point, 
-            dto.Category, 
-            userId,      
-            districtId,   
-            dto.Description
-        );
+        if (dto.Points == null || dto.Points.Count == 0)
+            throw new ArgumentException("Координаты отсутствуют");
 
-        if (dto.ImageFiles != null && dto.ImageFiles.Count > 0)
+        // Получаем актуальные роли из базы для защиты
+        var user = await _userRepository.GetByIdAsync(userId);
+        var roles = await _identityRepository.GetRolesAsync(user!);
+        bool isStaff = roles.Any(r => r is "Admin" or "Official");
+
+        Geometry location;
+
+        // 1. Сборка геометрии в зависимости от кол-ва точек
+        if (dto.Points.Count == 1) // Обычная точка
+        {
+            var p = dto.Points[0];
+            location = _geometryFactory.CreatePoint(new Coordinate(p.Lng, p.Lat));
+        }
+        else // Полигон (Зона)
+        {
+            if (!isStaff) throw new UnauthorizedAccessException("Только верифицированные лица могут создавать зоны.");
+
+            var coords = dto.Points.Select(p => new Coordinate(p.Lng, p.Lat)).ToList();
+        
+            // Замыкаем полигон для PostGIS (первая точка == последняя)
+            if (!coords.First().Equals2D(coords.Last()))
+                coords.Add(new Coordinate(coords.First().X, coords.First().Y));
+
+            location = _geometryFactory.CreatePolygon(coords.ToArray());
+        }
+
+        // 2. Создание сущности
+        var marker = Marker.Create(dto.Title, location, dto.Category, userId, districtId, dto.Description, dto.ScheduledAt);
+        // 3. Атомарная работа с файлами
+        if (dto.ImageFiles != null && dto.ImageFiles.Any())
         {
             foreach (var file in dto.ImageFiles)
             {
                 using var stream = file.OpenReadStream();
                 var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
-            
                 marker.Images.Add(MarkerImage.ForMarker(url, marker.Id));
             }
         }
@@ -74,10 +95,16 @@ public class MarkerService : IMarkerService
             Category = category, Status = status, MinLat = queryParams.MinLat, MaxLat = queryParams.MaxLat, MinLng = queryParams.MinLng, MaxLng = queryParams.MaxLng, Limit = queryParams.Limit 
         };
 
-        var previews = await _markerRepository.GetPreviewsAsync(filter);
+        var markers = await _markerRepository.GetForMapAsync(filter); // фильтр по BoundingBox
 
-        return previews.Select(p => new MarkerMapDto(
-            p.Id, p.Latitude, p.Longitude, p.Category, p.Status, p.Title
+        return markers.Select(m => new MarkerMapDto(
+            m.Id,
+            m.Title,
+            m.Category,
+            m.Status,
+            m.Location.GeometryType, // "Point", "Polygon" или "LineString"
+            m.Location.Coordinates.Select(c => new CoordinateDto(c.Y, c.X)).ToList(),
+            new CoordinateDto(m.Location.Centroid.Y, m.Location.Centroid.X) // Всегда возвращаем точку-центр
         ));
     }
 
@@ -201,44 +228,55 @@ public class MarkerService : IMarkerService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId)
+  public async Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId)
+{
+    var marker = await _markerRepository.GetByIdAsync(id) 
+                 ?? throw new KeyNotFoundException("Метка не найдена.");
+
+    var user = await _userRepository.GetByIdAsync(userId);
+    var roles = await _identityRepository.GetRolesAsync(user!);
+
+    bool isStaff = roles.Any(r => r is "Admin" or "Official");
+    bool isAuthor = marker.CreatedByUserId == userId;
+
+    // ВАЛИДАЦИЯ ПРАВ (БИЗНЕС-ПРАВИЛА)
+    // 1. Статус "Resolved/Accepted/Rejected" - только стафф (УК/Админ)
+    var finalStatuses = new[] { MarkerStatus.Resolved, MarkerStatus.Accepted, MarkerStatus.Rejected };
+    if (finalStatuses.Contains(dto.NewStatus) && !isStaff)
+        throw new UnauthorizedAccessException("Только официальные лица могут подтверждать решение задач.");
+
+    // 2. Обычный пользователь может менять статус только у СВОИХ объявлений или событий (например, отменить)
+    if (!isAuthor && !isStaff)
+        throw new UnauthorizedAccessException("Нет прав доступа.");
+
+    // 3. ПЕРЕХОД К СОЗДАНИЮ RESOLUTION
+    if (dto.NewStatus == MarkerStatus.Resolved || dto.NewStatus == MarkerStatus.Accepted)
     {
-        var marker = await _markerRepository.GetByIdAsync(id) 
-                     ?? throw new KeyNotFoundException("Метка не найдена.");
+        // Создаем резолюцию
+        var resolution = new MarkerResolution(id, userId, dto.Comment ?? "Выполнено официальной службой.");
 
-        var user = await _userRepository.GetByIdAsync(userId);
-        var roles = await _identityRepository.GetRolesAsync(user!);
-
-        bool isOfficial = roles.Contains("Official");
-        bool isAdmin = roles.Contains("Admin");
-        bool isAuthor = marker.CreatedByUserId == userId;
-
-        if (dto.NewStatus == MarkerStatus.Resolved)
+        // Сохраняем фото "После" (те самые ImageFiles из ChangeStatusDto)
+        if (dto.ImageFiles != null && dto.ImageFiles.Any())
         {
-            if (!isOfficial && !isAdmin)
-                throw new UnauthorizedAccessException("Закрывать задачи могут только представители официальных служб.");
-
-            var resolution = new MarkerResolution(id, userId, dto.OfficialComment ?? "Решено.");
-
-            if (dto.ProofImage != null)
+            foreach (var file in dto.ImageFiles)
             {
-                using var stream = dto.ProofImage.OpenReadStream();
-                var url = await _fileService.SaveFileAsync(stream, dto.ProofImage.FileName, "uploads");
+                using var stream = file.OpenReadStream();
+                var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
                 resolution.Images.Add(MarkerImage.ForResolution(url, resolution.Id));
             }
-
-            marker.SetResolution(resolution);
-        }
-        else
-        {
-            if (!isAuthor && !isOfficial && !isAdmin)
-                throw new UnauthorizedAccessException("Нет доступа к смене статуса этой метки.");
-
-            marker.ChangeStatus(dto.NewStatus);
         }
 
-        await _unitOfWork.SaveChangesAsync();
+        // Применяем решение к маркеру
+        marker.SetResolution(resolution);
     }
+    else
+    {
+        // Просто смена статуса (InProgress, Archived и т.д.)
+        marker.ChangeStatus(dto.NewStatus);
+    }
+
+    await _unitOfWork.SaveChangesAsync();
+}
     
 
     public async Task DeleteMarkerAsync(Guid id, Guid userId)

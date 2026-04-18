@@ -30,13 +30,14 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(m => m.Category).HasConversion<string>().IsRequired();
             entity.Property(m => m.Status).HasConversion<string>().IsRequired();
             
-            // Настройка нативной географической точки WGS84
             entity.Property(m => m.Location)
-                  .HasColumnType("geometry(Point, 4326)")
-                  .IsRequired();
+                .HasColumnType("geometry(Geometry, 4326)") 
+                .IsRequired();
                   
             entity.Property(m => m.CreatedAt).IsRequired();
             entity.Property(m => m.Rating).IsRequired();
+            entity.Property(m => m.ScheduledAt); 
+            entity.Property(m => m.ExpiresAt);
             
             entity.HasIndex(m => m.Location).HasMethod("GIST");
             

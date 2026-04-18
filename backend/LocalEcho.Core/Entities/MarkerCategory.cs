@@ -4,5 +4,7 @@ public enum MarkerCategory
 {
     Issue,
     Event,
-    Announcement
+    Announcement,
+    Suggestion,
+    Project
 }

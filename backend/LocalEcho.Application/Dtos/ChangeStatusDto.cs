@@ -5,6 +5,6 @@ namespace LocalEcho.Application.Dtos;
 
 public record ChangeStatusDto(
     MarkerStatus NewStatus,
-    string? OfficialComment,         
-    IFormFile? ProofImage
+    string? Comment,         
+    List<IFormFile>? ImageFiles
 );

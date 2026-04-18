@@ -8,14 +8,16 @@ public class Marker
     public Guid Id { get; private set; }
     public string Title { get; private set; } = null!;
     
-    public Point Location { get; private set; } = null!;
-    
+    //public Point Location { get; private set; } = null!;
+    public Geometry Location { get; private set; } = null!; 
     public string? Description { get; private set; }
     public MarkerCategory Category { get; private set; }
     public MarkerStatus Status { get; private set; }
     public Guid CreatedByUserId { get; private set; }
     public Guid DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime? ScheduledAt { get; private set; } 
+    public DateTime? ExpiresAt { get; private set; } 
     public DateTime? UpdatedAt { get; private set; }
     public int Rating { get; private set; } = 0;
     
@@ -26,7 +28,7 @@ public class Marker
 
     private Marker() { }
 
-    private Marker(string title, Point location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description)
+    private Marker(string title, Geometry location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description, DateTime? scheduledAt)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
@@ -35,18 +37,34 @@ public class Marker
         CreatedByUserId = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("Creator required");
         DistrictId = districtId != Guid.Empty ? districtId : throw new ArgumentException("District required");
         Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
-        Status = MarkerStatus.Active;
         CreatedAt = DateTime.UtcNow;
         Rating = 0;
+        ScheduledAt = scheduledAt;
+        Status = category switch
+        {
+            MarkerCategory.Event => MarkerStatus.Upcoming,
+            MarkerCategory.Suggestion => MarkerStatus.Review,
+            MarkerCategory.Announcement => MarkerStatus.Current,
+            _ => MarkerStatus.Active
+        };
+        
+        if (category == MarkerCategory.Announcement)
+        {
+            ExpiresAt = CreatedAt.AddDays(30);//срок жизни вынести либо сделат настраемым
+        }
     }
 
-    public static Marker Create(string title, Point location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description = null, string? imageUrl = null)
+    public static Marker Create(string title, Geometry location, MarkerCategory category, 
+        Guid createdByUserId, Guid districtId, string? description = null, DateTime? scheduledAt = null)
     {
-        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title required");
-        if (location == null) throw new ArgumentNullException(nameof(location));
-        
-        return new Marker(title, location, category, createdByUserId, districtId, description);
+        // Валидация
+        if (category == MarkerCategory.Event && !scheduledAt.HasValue)
+            throw new ArgumentException("Для события необходимо указать дату и время.");
+
+        return new Marker(title, location, category, createdByUserId, districtId, description, scheduledAt);
     }
+
+    public void SetExpiresAt(DateTime date) => ExpiresAt = date;
 
     public void UpdateContent(string title, string? description)
     {

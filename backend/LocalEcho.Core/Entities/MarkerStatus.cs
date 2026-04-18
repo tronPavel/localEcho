@@ -4,5 +4,16 @@ public enum MarkerStatus
 {
     Active,
     InProgress,
-    Resolved
+    Resolved,
+    
+    Upcoming,
+    Ongoing,
+    Passed,
+    
+    Current,
+    Archived,
+    
+    Review,
+    Accepted,
+    Rejected
 }

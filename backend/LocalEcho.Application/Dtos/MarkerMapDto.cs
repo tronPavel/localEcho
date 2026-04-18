@@ -4,9 +4,10 @@ namespace LocalEcho.Application.Dtos;
 
 public record MarkerMapDto(
     Guid Id,
-    double Latitude,
-    double Longitude,
+    string Title,
     MarkerCategory Category,
     MarkerStatus Status,
-    string Title
+    string GeometryType,           
+    List<CoordinateDto> Coordinates, 
+    CoordinateDto Centroid   
 );

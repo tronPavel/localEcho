@@ -11,7 +11,8 @@ public interface IMarkerRepository
     Task<Vote?> GetVoteAsync(Guid markerId, Guid userId);
     Task AddVoteAsync(Vote vote);
     void RemoveVote(Vote vote);
-    Task<IEnumerable<MarkerPreview>> GetPreviewsAsync(MarkerFilter filter, CancellationToken ct = default);
+    Task<IEnumerable<Marker>> GetForMapAsync(MarkerFilter filter, CancellationToken ct = default);
+    
     Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default);
     Task DeleteAsync(Marker marker);
 }

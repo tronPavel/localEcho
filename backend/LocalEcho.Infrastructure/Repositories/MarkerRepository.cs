@@ -23,8 +23,65 @@ public class MarkerRepository : IMarkerRepository
         return await _context.Markers
             .Include(m => m.Images)
             .Include(m => m.Resolution)
-            .ThenInclude(r => r.Images)
+                .ThenInclude(r => r.Images)
+            .Include(m => m.Resolution)
+                .ThenInclude(r => r.ResolvedByUser) // Ссылка на того, кто решил
             .FirstOrDefaultAsync(m => m.Id == id, ct);
+    }
+
+    public async Task<IEnumerable<Marker>> GetForMapAsync(MarkerFilter filter, CancellationToken ct = default)
+    {
+        var query = _context.Markers.AsNoTracking();
+
+        // 1. Фильтры по категории и статусу
+        if (filter.Category.HasValue) query = query.Where(m => m.Category == filter.Category.Value);
+        if (filter.Status.HasValue)   query = query.Where(m => m.Status == filter.Status.Value);
+
+        // 2. Пространственный фильтр (Bounding Box)
+        if (filter.HasBoundingBox())
+        {
+            var factory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+            
+            // Envelope в NTS — это прямоугольник (XMin, XMax, YMin, YMax)
+            var envelope = new Envelope(
+                filter.MinLng!.Value, filter.MaxLng!.Value, 
+                filter.MinLat!.Value, filter.MaxLat!.Value);
+            
+            var boundingBox = factory.ToGeometry(envelope);
+            boundingBox.SRID = 4326;
+
+            // PostGIS нативно проверит пересечение любой нашей геометрии с этим квадратом
+            query = query.Where(m => m.Location.Intersects(boundingBox));
+        }
+
+        query = query.OrderByDescending(m => m.CreatedAt);
+
+        return await query.Take(filter.Limit ?? 1000).ToListAsync(ct);
+    }
+
+    public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)
+    {
+        // Запрос остается почти таким же, т.к. m.Location — это теперь просто объект Geometry
+        // который спокойно лежит внутри Marker
+        return await _context.Markers
+            .AsNoTracking()
+            .Include(m => m.Images)
+            .Include(m => m.Resolution)
+                .ThenInclude(r => r.Images)
+            .Include(m => m.Resolution)
+                .ThenInclude(r => r.ResolvedByUser)
+            .Where(m => m.Id == markerId)
+            .Select(m => new MarkerDetail(
+                m,
+                m.Creator,
+                currentUserId.HasValue 
+                    ? _context.Votes
+                        .Where(v => v.MarkerId == m.Id && v.UserId == currentUserId)
+                        .Select(v => v.IsUpvote ? 1 : -1)
+                        .FirstOrDefault() 
+                    : 0
+            ))
+            .FirstOrDefaultAsync(ct);
     }
     public async Task AddAsync(Marker marker, CancellationToken ct = default)
     {
@@ -51,65 +108,7 @@ public class MarkerRepository : IMarkerRepository
     {
         _context.Votes.Remove(vote);
     }
-
-
-    public async Task<IEnumerable<MarkerPreview>> GetPreviewsAsync(MarkerFilter filter, CancellationToken ct = default)
-    {
-        var query = _context.Markers.AsNoTracking();
-
-        if (filter.Category.HasValue) query = query.Where(m => m.Category == filter.Category.Value);
-        if (filter.Status.HasValue)   query = query.Where(m => m.Status == filter.Status.Value);
-
-        if (filter.HasBoundingBox())
-        {
-            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-            
-            var boundingBox = geometryFactory.ToGeometry(
-                new Envelope(
-                    filter.MinLng!.Value, filter.MaxLng!.Value, 
-                    filter.MinLat!.Value, filter.MaxLat!.Value)
-            );
-            
-           
-            query = query.Where(m => m.Location.Intersects(boundingBox));
-        }
-
-        query = query.OrderByDescending(m => m.CreatedAt);
-
-        return await query
-            .Select(m => new MarkerPreview(
-                m.Id,
-                m.Title,
-                m.Location.Y, 
-                m.Location.X, 
-                m.Category,
-                m.Status
-            ))
-            .Take(filter.Limit ?? 1000)
-            .ToListAsync(ct);
-    }
-
-    public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)
-    {
-        return await _context.Markers
-            .AsNoTracking()
-            .Include(m => m.Images)
-            .Include(m => m.Resolution)
-            .ThenInclude(r => r.Images)
-            .Include(m => m.Resolution) // Чтобы получить имя того, кто решил (нужно будет джойнить юзера в будущем)
-            .Where(m => m.Id == markerId)
-            .Select(m => new MarkerDetail(
-                m,
-                m.Creator,
-                currentUserId.HasValue 
-                    ? _context.Votes
-                        .Where(v => v.MarkerId == m.Id && v.UserId == currentUserId)
-                        .Select(v => v.IsUpvote ? 1 : -1)
-                        .FirstOrDefault() 
-                    : 0
-            ))
-            .FirstOrDefaultAsync(ct);
-    }
+    
     public Task DeleteAsync(Marker marker)
     {
         _context.Markers.Remove(marker);
