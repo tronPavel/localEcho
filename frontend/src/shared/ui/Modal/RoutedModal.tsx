@@ -1,20 +1,19 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
+import {ModalHeader} from "@/shared/ui/Modal/ModalHeader.tsx";
 
 interface RoutedModalProps {
     children: ReactNode;
     title?: string;
-    maxWidth?: number;
 }
 
-export const RoutedModal = ({ children, title, maxWidth }: RoutedModalProps) => {
+export const RoutedModal = ({ children, title}: RoutedModalProps) => {
     const navigate = useNavigate();
-
     return (
         <Modal isOpen={true} onClose={() => navigate('/')}>
-            {title && <h2>{title}</h2>}
-            <div style={{ maxWidth: maxWidth ? `${maxWidth}px` : 'auto' }}>
+            {title && <ModalHeader title={title} />}
+            <div>
                 {children}
             </div>
         </Modal>

@@ -5,7 +5,7 @@ import {MarkerDetailsFeature} from "@/features/view-marker/ui/MarkerDetailsFeatu
 export const MarkerDetailsPage = () => {
     const { id } = useParams();
     return (
-        <RoutedModal maxWidth={600}>
+        <RoutedModal>
             {id && <MarkerDetailsFeature id={id} />}
         </RoutedModal>
     );

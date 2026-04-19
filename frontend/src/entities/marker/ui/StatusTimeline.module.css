@@ -1,0 +1,51 @@
+.timeline {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 0 10px;
+}
+
+.step {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot {
+    width: 14px; height: 14px;
+    background: #d1d5db;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.line {
+    position: absolute;
+    top: 6px; left: 50%;
+    width: 100%; height: 2px;
+    background: #e5e7eb;
+    z-index: 1;
+}
+
+.active .dot {
+    background: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-input-bg);
+}
+
+.active .label {
+    color: var(--color-primary);
+    font-weight: 800;
+}
+
+.past .dot, .past .line {
+    background: var(--color-accent-yellow);
+}
+
+.label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+}

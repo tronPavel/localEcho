@@ -1,31 +1,78 @@
 .form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    animation: fadeIn 0.3s ease;
+    gap: 28px;
 }
 
-.error {
-    color: red;
-    font-size: 12px;
+.formFooter {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
 }
 
 .switch {
-    text-align: center;
     font-size: 14px;
+    color: var(--text-muted);
 }
 
 .switch span {
-    color: #007bff;
+    color: var(--color-primary);
+    font-weight: 700;
     cursor: pointer;
-    transition: color 0.2s;
+    text-decoration: underline;
+    margin-left: 4px;
 }
 
-.switch span:hover {
-    color: #0056b3;
+/* Сетка для регистрации */
+.registerGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.registerGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 140px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.districtContainer {
+    display: flex;
+    align-items: flex-end; /* Кнопка по линии инпута */
+    gap: 8px;
+}
+
+.locateBtn {
+    height: 58px; /* Совпадает с высотой нашего большого инпута */
+    width: 60px;
+    padding: 0;
+    font-size: 20px;
+}
+
+.formFooter {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+@media (max-width: 800px) {
+    .registerGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+/* Если мобилка - в одну колонку */
+@media (max-width: 600px) {
+    .registerGrid { grid-template-columns: 1fr; }
 }

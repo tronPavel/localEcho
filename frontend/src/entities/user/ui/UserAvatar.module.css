@@ -1,56 +1,84 @@
-/* Базовый контейнер */
 .avatar {
     border-radius: 50%;
-    background-color: #e5e7eb; /* Более современный светло-серый */
+    background-color: #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #4b5563;
     font-weight: 600;
     overflow: hidden;
-    flex-shrink: 0; /* Чтобы аватар не сжимался в flex-блоках */
+    flex-shrink: 0;
     transition: transform 0.2s ease;
-    border: 1px solid rgba(0,0,0,0.05); /* Легкий контур */
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
-/* Эффект при наведении (только если это не заглушка, или по желанию) */
 .avatar:hover {
     transform: scale(1.05);
 }
 
-/* Изображение внутри */
 .avatar img {
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: cover; /* Ключевое свойство: заполняет круг, обрезая лишнее */
+    object-fit: cover;
 }
 
-/* Плейсхолдер для букв */
 .placeholder {
     user-select: none;
     text-transform: uppercase;
 }
 
-/* ВАРИАЦИИ РАЗМЕРОВ */
 
-/* Маленький (для Лидерборда и мелких меток) */
 .small {
     width: 32px;
     height: 32px;
     font-size: 14px;
 }
 
-/* Средний (дефолтный) */
 .medium {
     width: 48px;
     height: 48px;
     font-size: 18px;
 }
 
-/* Большой (для профиля) */
 .large {
     width: 120px;
     height: 120px;
     font-size: 42px;
 }
+.wrapper { position: relative; width: fit-content; flex-shrink: 0; }
+.verifiedBadge {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    background: white;
+    border-radius: 50%;
+    padding: 1px;
+}
+.wrapper {
+    position: relative; /* Контекст для абсолютного позиционирования галочки */
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+/* Стили галочки */
+.verifiedBadgeWrapper {
+    position: absolute;
+    bottom: -2px; /* Чуть-чуть за край аватара */
+    right: -2px;
+    z-index: 2;
+    background: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Опционально: можно добавить тонкий золотой бордер для аватаров админов */
+.officialBorder {
+    box-shadow: 0 0 0 2px var(--color-accent-yellow);
+}
+
+/* Остальные стили аватара из предыдущих ответов остаются без изменений */

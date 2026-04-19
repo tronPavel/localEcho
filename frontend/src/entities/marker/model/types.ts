@@ -1,19 +1,34 @@
+export type MarkerCategory = 'Issue' | 'Event' | 'Announcement' | 'Suggestion' | 'Project';
+export interface Coordinate {
+    lat: number;
+    lng: number;
+}
+
 export interface MarkerMapDto {
     id: string;
-    latitude: number;
-    longitude: number;
-    category: 'Issue' | 'Event' | 'Announcement';
-    status: 'Active' | 'InProgress' | 'Resolved';
     title: string;
+    category: 'Issue' | 'Event' | 'Announcement' | 'Suggestion' | 'Project';
+    status: string;
+    geometryType: 'Point' | 'Polygon'; // Приходит с бэкенда
+    coordinates: Coordinate[];        // Массив точек фигуры
+    centroid: Coordinate;              // Геометрический центр для иконки
+}
+export interface MarkerResolutionDto {
+    comment: string;
+    authorName: string;
+    createdAt: string;
+    imageUrls: string[];
 }
 
 export interface MarkerDetailDto {
+    expiresAt?: string;
+    scheduledAt?: string;
     id: string;
     title: string;
     description?: string;
-    imageUrls?: string[];
-    category: 'Issue' | 'Event' | 'Announcement';
-    status: 'Active' | 'InProgress' | 'Resolved';
+    imageUrls: string[];
+    category: MarkerCategory;
+    status: string; // Зависит от категории (см. бэкенд)
 
     creatorId: string;
     creatorName: string;
@@ -24,13 +39,18 @@ export interface MarkerDetailDto {
 
     createdAt: string;
     updatedAt?: string;
+
+    geometryType: 'Point' | 'Polygon';
+    coordinates: Coordinate[];
+
+    resolution?: MarkerResolutionDto;
 }
 
 export interface CreateMarkerDto {
     title: string;
-    latitude: number;
-    longitude: number;
     description?: string;
-    category: 'Issue' | 'Event' | 'Announcement';
+    category: MarkerCategory;
+    points: Coordinate[]; // МАССИВ вместо одиночных Lat/Lng
     imageFiles?: File[];
+    scheduledAt?: string; // Для эвентов
 }

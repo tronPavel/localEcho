@@ -1,131 +1,104 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { createMarker } from '../model/createMarkerApi';
+import { useMapInteractionStore } from '../model/interactionStore';
 import { Button } from '@/shared/ui/Button/Button';
 import { Input } from '@/shared/ui/Input/Input';
 import { Textarea } from '@/shared/ui/Textarea/Textarea';
 import { Select } from '@/shared/ui/Select/Select';
-import { createMarkerSchema } from '../lib/validateMarker';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createMarker } from '../model/createMarkerApi';
-import { useCreateMarkerStore } from '../model/createMarkerStore';
+
 import styles from './CreateMarkerForm.module.css';
+import type {MarkerCategory} from "@/entities/marker/model/types.ts";
+import {ImageUploader} from "@/shared/ui/ImageUploader/ImageUploader.tsx";
 
-interface FormData {
+interface CreateMarkerFields {
     title: string;
-    description?: string;
-    category: 'Issue' | 'Event' | 'Announcement';
+    description: string;
+    category: MarkerCategory;
+    scheduledAt?: string;
 }
-
-export const CreateMarkerForm = () => {
-    const { pendingPosition, closeModal } = useCreateMarkerStore();
+export const CreateMarkerForm = ({ onSuccess }: { onSuccess: () => void }) => {
+    const { tempPoints, clear } = useMapInteractionStore();
     const queryClient = useQueryClient();
 
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [files, setFiles] = useState<File[]>([]);
 
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
-        resolver: zodResolver(createMarkerSchema),
-        defaultValues: { category: 'Issue' },
+    const { register, handleSubmit, watch, formState: { errors } } = useForm<CreateMarkerFields>({
+        defaultValues: {
+            category: 'Issue',
+            title: '',
+            description: ''
+        }
     });
 
+    const currentCategory = watch('category');
+
     const mutation = useMutation({
-        mutationFn: (data: FormData) => createMarker({
+        mutationFn: (data: any) => createMarker({
             ...data,
-            latitude: pendingPosition!.lat,
-            longitude: pendingPosition!.lng,
-            imageFiles: selectedFiles // Передаем массив в API
+            points: tempPoints,
+            imageFiles: files
         }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['markers'] });
-            reset();
-            setSelectedFiles([]);
-            setPreviewUrls([]);
-            closeModal();
+            toast.success("Метка успешно опубликована!");
+            clear();
+            onSuccess();
         },
+        onError: (err: any) => toast.error(err.response?.data?.detail || "Ошибка при создании")
     });
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files);
-            setSelectedFiles(prev => [...prev, ...files]);
 
-            const newPreviews = files.map(file => URL.createObjectURL(file));
-            setPreviewUrls(prev => [...prev, ...newPreviews]);
-        }
-    };
-
-    const removeFile = (index: number) => {
-        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-    };
-
-    if (!pendingPosition) return <div>Выберите точку на карте</div>;
 
     return (
-        <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className={styles.form}>
-            <h2>Добавить метку</h2>
+        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className={styles.form}>
+            <div className={styles.formScrollArea}>
+                <Input
+                    label="Что происходит?"
+                    placeholder="Напр: Разбитая лавочка в сквере..."
+                    {...register('title', { required: "Назовите событие" })}
+                    error={errors.title?.message as string}
+                />
 
-            <Input
-                placeholder="Заголовок *"
-                {...register('title')}
-                error={errors.title?.message}
-            />
+                <Textarea
+                    label="Детали"
+                    placeholder="Опишите ситуацию подробнее для соседей и служб..."
+                    {...register('description')}
+                />
 
-            <Textarea
-                placeholder="Описание"
-                {...register('description')}
-            />
+                <Select label="Категория" {...register('category')}>
+                    <option value="Issue">⚠️ Проблема ЖКХ</option>
+                    <option value="Event">🎉 Мероприятие</option>
+                    <option value="Announcement">📢 Объявление</option>
+                    <option value="Suggestion">💡 Предложение</option>
+                    <option value="Project">🏗 Проект города</option>
+                </Select>
 
-            <Select {...register('category')}>
-                <option value="Issue">Проблема</option>
-                <option value="Event">Мероприятие</option>
-                <option value="Announcement">Объявление</option>
-            </Select>
-
-            <div className={styles.imageSection}>
-                <label className={styles.fileLabel}>
-                    Добавить фотографии
-                    <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        style={{ display: 'none' }}
+                {currentCategory === 'Event' && (
+                    <Input
+                        label="Дата и время"
+                        type="datetime-local"
+                        {...register('scheduledAt', { required: "Укажите дату начала" })}
+                        error={errors.scheduledAt?.message as string}
                     />
-                </label>
+                )}
 
-                {/* Сетка превью */}
-                <div className={styles.previewsGrid}>
-                    {previewUrls.map((url, i) => (
-                        <div key={url} className={styles.previewItem}>
-                            <img src={url} alt="preview" />
-                            <button
-                                type="button"
-                                className={styles.removeBadge}
-                                onClick={() => removeFile(i)}
-                            >
-                                ×
-                            </button>
-                        </div>
-                    ))}
-                </div>
+                <ImageUploader onFilesChange={(f) => setFiles(f)} />
             </div>
 
-            <div className={styles.actions}>
+            <div className={styles.stickyActions}>
                 <Button
-                    variant="secondary"
+                    variant="outline"
                     type="button"
-                    onClick={closeModal}
-                    disabled={mutation.isPending}
+                    onClick={() => { clear(); onSuccess(); }}
                 >
                     Отмена
                 </Button>
-                <Button
-                    type="submit"
-                    disabled={mutation.isPending}
-                >
-                    {mutation.isPending ? 'Загрузка...' : 'Создать метку'}
+                <Button type="submit" disabled={mutation.isPending}>
+                    {mutation.isPending ? 'Опубликовываем...' : 'Опубликовать'}
                 </Button>
             </div>
         </form>

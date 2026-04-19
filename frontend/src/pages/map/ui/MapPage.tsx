@@ -1,13 +1,13 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import {keepPreviousData, useQuery} from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { MapHeader } from '../components/MapHeader';
 import { MapSidebar } from '../components/MapSidebar';
-import { CreateMarkerModal } from '@/features/create-marker/ui/CreateMarkerModal';
+import { MapView } from '../components/MapView';
 import { getMarkers } from '@/features/create-marker/model/createMarkerApi';
 import { useFilterStore } from '@/features/filter-markers/model/filterStore';
 import styles from './MapPage.module.css';
-import {MapView} from "@/pages/map/components/MapView.tsx";
-import {useEffect, useState} from "react";
+import {MapToolbar} from "@/pages/map/components/MapToolbar.tsx";
+import {useLoadingDelay} from "@/shared/lib/hooks/useLoadingDelay.ts";
 
 export const MapPage = () => {
     const navigate = useNavigate();
@@ -15,29 +15,14 @@ export const MapPage = () => {
 
     const { data: markers = [], isFetching } = useQuery({
         queryKey: ['markers', category, status, bounds],
-        queryFn: () => getMarkers({
-            category: category || undefined,
-            status: status || undefined,
-            ...bounds
-        }),
+        queryFn: () => getMarkers({ category: category || undefined, status: status || undefined, ...bounds }),
         enabled: !!bounds,
-        placeholderData: keepPreviousData, // Не убирает старые маркеры при обновлении
-        staleTime: 5000, // Данные считаются "свежими" 5 секунд (защита от лишних запросов)
+        placeholderData: keepPreviousData,
+        staleTime: 10000,
     });
-    const [showLoading, setShowLoading] = useState(false);
 
-    useEffect(() => {
-        let timer: ReturnType<typeof setTimeout>;
+    const showLoading = useLoadingDelay(isFetching, 400);
 
-        if (isFetching) {
-            // Если грузится долго (больше 400мс), показываем индикатор
-            timer = setTimeout(() => setShowLoading(true), 400);
-        } else {
-            setShowLoading(false);
-        }
-
-        return () => clearTimeout(timer);
-    }, [isFetching]);
     return (
         <div className={styles.app}>
             <MapHeader
@@ -57,14 +42,12 @@ export const MapPage = () => {
                     )}
 
                     <MapView markers={markers} />
+
+                    <MapToolbar />
                 </div>
             </main>
 
-            {/* Место для отрисовки модалок (ProfilePage, RegisterPage и др.) */}
             <Outlet />
-
-            {/* Логика создания маркера через Zustand по клику на карте */}
-            <CreateMarkerModal />
         </div>
     );
 };

@@ -1,20 +1,129 @@
-.profile {
+.profileContainer {
+    width: 100%;
+}
+
+.topInfo {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 40px;
+    background-color: var(--color-input-bg);
+    border-radius: var(--radius-lg);
+    margin-bottom: 48px;
+}
+
+.nameSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nameLine {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.userName {
+    font-size: 38px;
+    font-weight: 900;
+    color: var(--color-primary);
+    margin: 0;
+}
+
+.userEmail {
+    font-size: 16px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* СТАТИСТИКА КАРТОЧКАМИ */
+.statsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.statCard {
+    background: white;
+    border: 1px solid #f3f4f6;
+    padding: 32px;
+    border-radius: var(--radius-md);
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-soft);
+}
+
+.statLabel {
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.statValue {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+/* ФОРМА РЕДАКТИРОВАНИЯ */
+.editForm {
+    width: 100%;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 60px;
+    margin-bottom: 48px;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.editFooter {
+    padding-top: 32px;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: flex-end;
     gap: 16px;
-    animation: fadeIn 0.3s ease;
 }
 
-.profile h2 {
-    margin: 8px 0;
+/* Для алертов внутри */
+.addressSection {
+    margin: 40px 0;
+    padding: 20px 32px;
+    background: #fffbeb;
+    border-radius: var(--radius-md);
+    border: 1px solid #fef3c7;
 }
 
-.profile p {
-    margin: 4px 0;
+.addressSection label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #92400e;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+.addressSection p {
+    font-size: 18px;
+    font-weight: 600;
+    color: #b45309;
+    margin: 4px 0 0 0;
+}
+
+.loading {
+    padding: 100px;
+    text-align: center;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+    font-weight: 800;
 }

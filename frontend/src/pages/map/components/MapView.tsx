@@ -1,10 +1,14 @@
-import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polygon, Tooltip } from 'react-leaflet';
 import MarkerClusterGroup from "react-leaflet-cluster";
-import { createMarkerIcon } from '@/entities/marker/ui/MarkerIcon.tsx';
 import { useNavigate } from 'react-router-dom';
-import type { MarkerMapDto } from '@/entities/marker/model/types.ts';
-import { MapController, MapBoundsTracker, MapClickHandler } from '@/pages/map/components/MapPlugins.tsx'
+import { createMarkerIcon } from '@/entities/marker/ui/MarkerIcon';
+import type { MarkerMapDto } from '@/entities/marker/model/types';
 import styles from './MapView.module.css';
+import {MapBoundsTracker, MapController} from "@/pages/map/components/MapPlugins.tsx";
+import {DrawingPreviewLayer} from "@/pages/map/components/DrawingPreviewLayer.tsx";
+import {getCategoryColor} from "@/entities/marker/lib/getCategoryColor.ts";
+import {GeomanControl} from "@/pages/map/components/GeomanControl.tsx";
+import {DistrictsLayer} from "@/pages/map/components/DistrictsLayer.tsx";
 
 interface MapViewProps {
     markers: MarkerMapDto[];
@@ -15,30 +19,41 @@ export const MapView = ({ markers }: MapViewProps) => {
 
     return (
         <MapContainer
-            center={[55.7558, 37.6173]}
-            zoom={13}
+            center={[53.90, 27.56]}
+            zoom={12}
             className={styles.container}
-            zoomControl={false} // для красоты можно убрать стандартный зум
+            zoomControl={false}
         >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-            {/* Наши плагины управления */}
+            <DistrictsLayer />
             <MapController />
             <MapBoundsTracker />
-            <MapClickHandler />
+            <GeomanControl />
+            <DrawingPreviewLayer />
+
+            {markers
+                .filter(m => m.geometryType === 'Polygon')
+                .map(m => (
+                    <Polygon
+                        key={m.id}
+                        positions={m.coordinates.map(c => [c.lat, c.lng])}
+                        pathOptions={{ color: getCategoryColor(m.category), fillOpacity: 0.2 }}
+                        eventHandlers={{ click: () => navigate(`/marker/${m.id}`) }}
+                    />
+                ))
+            }
 
             <MarkerClusterGroup chunkedLoading>
-                {markers.map((marker) => (
+                {markers.map((m) => (
                     <Marker
-                        key={marker.id}
-                        position={[marker.latitude, marker.longitude]}
-                        icon={createMarkerIcon(marker.category)}
-                        eventHandlers={{
-                            click: () => navigate(`/marker/${marker.id}`),
-                        }}
+                        key={m.id}
+                        position={[m.centroid.lat, m.centroid.lng]}
+                        zIndexOffset={m.category === 'Project' ? -100 : 100}
+                        icon={createMarkerIcon(m.category)}
+                        eventHandlers={{ click: () => navigate(`/marker/${m.id}`) }}
                     >
                         <Tooltip direction="top" offset={[0, -20]}>
-                            {marker.title}
+                            {m.title}
                         </Tooltip>
                     </Marker>
                 ))}

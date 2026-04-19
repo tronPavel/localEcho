@@ -1,18 +1,36 @@
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
 .item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
+    gap: 20px;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    background: white;
+    transition: var(--transition-fast);
+    border-left: 4px solid transparent;
 }
 
 .item:hover {
-    background: #f0f0f0;
+    transform: translateX(10px);
+    background: var(--color-bg-warm);
+}
+
+.isCurrentUser {
+    border-left-color: var(--color-accent-yellow);
+    background: #fffbeb;
+}
+
+.rankSide {
+    width: 40px;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--color-primary);
+}
+
+.score {
+    margin-left: auto;
+    background: var(--color-primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-weight: 800;
 }

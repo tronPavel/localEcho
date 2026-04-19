@@ -3,6 +3,7 @@ import type { AuthResponseDto, LoginDto, RegisterDto } from "./types";
 
 export const login = async (data: LoginDto): Promise<AuthResponseDto> => {
     const response = await api.post('/auth/login', data);
+
     return response.data.data;
 };
 
@@ -19,6 +20,3 @@ export const refreshToken = async (token: string, refreshToken: string): Promise
 export const logout = async () => {
     await api.post('/auth/logout');
 };
-
-export class getDistricts {
-}

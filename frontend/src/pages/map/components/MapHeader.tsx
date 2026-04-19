@@ -1,39 +1,35 @@
-import { Button } from '@/shared/ui/Button/Button.tsx';
-import { useAuthStore } from '@/features/auth/model/authStore.ts';
-import styles from '../ui/MapPage.module.css';
+import { useAuthStore } from '@/features/auth/model/authStore';
+import { UserAvatar } from '@/entities/user/ui/UserAvatar';
+import { Button } from '@/shared/ui/Button/Button';
+import styles from './MapHeader.module.css';
 
-interface MapHeaderProps {
-    onOpenLeaderboard: () => void;
-    onOpenProfile: () => void;
-    onOpenLogin: () => void;
-    onOpenRegister: () => void;
-}
-
-export const MapHeader = ({
-                              onOpenLeaderboard,
-                              onOpenProfile,
-                              onOpenLogin,
-                              onOpenRegister
-                          }: MapHeaderProps) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const clearUser = useAuthStore((state) => state.clearUser);
+export const MapHeader = ({ onOpenLeaderboard, onOpenProfile, onOpenLogin, onOpenRegister }: any) => {
+    const { isAuthenticated, user } = useAuthStore();
 
     return (
         <header className={styles.header}>
-            <h1>Local Echo</h1>
-            <div style={{ display: 'flex', gap: '12px' }}>
-                <Button onClick={onOpenLeaderboard}>Топ</Button>
+            <div className={styles.logoGroup}>
+                <h1 className={styles.brand}>Local<span>Echo</span></h1>
+            </div>
+
+            <div className={styles.actions}>
+                <Button variant="outline" size="small" onClick={onOpenLeaderboard}>
+                    🏆 Рейтинг
+                </Button>
 
                 {isAuthenticated ? (
-                    <>
-                        <Button onClick={onOpenProfile}>Профиль</Button>
-                        <Button variant="outline" onClick={clearUser}>Выйти</Button>
-                    </>
+                    <div className={styles.profilePill} onClick={onOpenProfile}>
+                        <div className={styles.userText}>
+                            <span className={styles.nick}>{user?.name}</span>
+                            <span className={styles.points}>{user?.points} pts</span>
+                        </div>
+                        <UserAvatar user={user} size="small" />
+                    </div>
                 ) : (
-                    <>
-                        <Button onClick={onOpenLogin}>Войти</Button>
-                        <Button variant="secondary" onClick={onOpenRegister}>Регистрация</Button>
-                    </>
+                    <div className={styles.authButtons}>
+                        <Button onClick={onOpenLogin} size="small" variant="secondary">Войти</Button>
+                        <Button onClick={onOpenRegister} size="small">Регистрация</Button>
+                    </div>
                 )}
             </div>
         </header>

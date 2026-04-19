@@ -6,7 +6,7 @@ export const LoginPage = () => {
     const navigate = useNavigate();
 
     return (
-        <RoutedModal title="Вход в систему" maxWidth={400}>
+        <RoutedModal title="Вход в систему" >
             <LoginForm
                 onSuccess={() => navigate('/')}
                 onSwitch={() => navigate('/register')}

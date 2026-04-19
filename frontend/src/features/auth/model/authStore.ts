@@ -57,3 +57,24 @@ export const useRestoreAuth = () => {
         refreshSession();
     }, [refreshSession]);
 };
+
+export const usePermissions = () => {
+    const { user, isAuthenticated } = useAuthStore();
+    const roles = user?.roles || [];
+
+    const isAdmin = roles.includes('Admin');
+    const isModerator = roles.includes('Moderator');
+    const isOfficial = roles.includes('Official');
+
+    return {
+        isAuthenticated,
+        isGuest: !isAuthenticated,
+        isAdmin,
+        isModerator,
+        isOfficial,
+        canDrawPolygons: isAdmin || isOfficial,
+        canResolveMarkers: isAdmin || isOfficial,
+        canAccessAdmin: isAdmin || isModerator,
+        isOwner: (createdById: string) => user?.userId === createdById,
+    };
+};

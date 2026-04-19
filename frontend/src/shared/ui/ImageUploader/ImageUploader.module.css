@@ -1,0 +1,104 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.uploadCard {
+    width: 100%;
+    background-color: var(--color-input-bg);
+    border: 2px dashed #cbd5e1;
+    border-radius: var(--radius-md);
+    transition: var(--transition-fast);
+}
+
+.uploadCard:hover {
+    border-color: var(--color-accent-yellow);
+    background-color: #fff;
+}
+
+.dropArea {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-align: center;
+}
+
+.plus {
+    font-size: 28px;
+    color: var(--color-primary);
+    font-weight: 900;
+    margin-bottom: 4px;
+}
+
+.dropArea p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.previewItem {
+    position: relative;
+    aspect-ratio: 1 / 1; /* Всегда квадратные плитки */
+    background-color: #eee;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid #e5e7eb;
+}
+
+.previewItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.removeBtn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    background-color: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: transform 0.2s, background-color 0.2s;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.removeBtn:hover {
+    background-color: #b91c1c;
+    transform: scale(1.15);
+}
+
+.grid:only-child .previewItem {
+    max-width: 150px;
+}

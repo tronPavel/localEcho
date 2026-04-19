@@ -1,58 +1,72 @@
 .modalOverlay {
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(6, 78, 59, 0.15); /* Темно-зеленая очень прозрачная тень */
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
-    animation: fadeIn 0.25s ease;
+    padding: 40px;
 }
 
 .modal {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
     position: relative;
-    max-width: 90%;
-    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+.modalContent {
+    padding: 30px 40px;
     overflow-y: auto;
-    animation: slideUp 0.3s ease;
+    flex: 1;
+    scrollbar-gutter: stable;
+}
+
+.modalContent::-webkit-scrollbar {
+    width: 8px;
+}
+.modalContent::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 20px; /* Чтобы скролл не доходил до скругленных краев */
+}
+.modalContent::-webkit-scrollbar-thumb {
+    background: #d1d5db; /* Светло-серый, чтобы не отвлекать */
+    border-radius: 10px;
+    border: 2px solid white; /* Делает скролл визуально тоньше и "парящим" */
+}
+.modalContent::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
 }
 
 .closeButton {
     position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
+    top: 20px;
+    right: 20px;
+    background: var(--color-bg-warm);
     border: none;
-    font-size: 28px;
-    color: #666;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     cursor: pointer;
-    width: 40px;
-    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    transition: var(--transition-fast);
+    z-index: 2100;
+    font-size: 20px;
+    color: var(--color-primary);
 }
 
 .closeButton:hover {
-    color: #000;
-    background: #f3f4f6;
-    border-radius: 50%;
-}
-
-.modalContent {
-    padding: 24px;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    background-color: var(--color-accent-yellow);
+    transform: rotate(90deg);
 }

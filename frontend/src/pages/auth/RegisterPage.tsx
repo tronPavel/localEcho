@@ -6,7 +6,7 @@ export const RegisterPage = () => {
     const navigate = useNavigate();
 
     return (
-        <RoutedModal title="Создать аккаунт" maxWidth={450}>
+        <RoutedModal title="Создать аккаунт" >
             <RegisterForm
                 onSuccess={() => navigate('/')}
                 onSwitch={() => navigate('/login')}

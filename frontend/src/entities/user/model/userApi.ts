@@ -1,6 +1,5 @@
 import { api } from "@/shared/api/apiInstance";
-import type {UpdateProfileDto} from "@/entities/user/model/types.ts";
-import type {UserProfileDto} from "@/features/auth/model/types.ts";
+import type {UpdateProfileDto, UserProfileDto} from "@/entities/user/model/types.ts";
 
 export const getMyProfile = async (): Promise<UserProfileDto> => {
     const response = await api.get('/users/profile');
@@ -14,7 +13,6 @@ export const updateProfile = async (data: UpdateProfileDto) => {
     if (data.districtId) formData.append('DistrictId', data.districtId);
     if (data.avatarFile) formData.append('AvatarFile', data.avatarFile);
 
-    // Вызываем один метод PUT /profile
     await api.put('/users/profile', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
