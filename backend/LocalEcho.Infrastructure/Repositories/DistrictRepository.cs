@@ -35,4 +35,29 @@ public class DistrictRepository : IDistrictRepository
         return await _context.Districts
             .AnyAsync(d => d.Id == districtId && d.Boundaries.Contains(p));
     }
+    public async Task<DistrictAnalytics> GetAnalyticsAsync(Guid districtId, CancellationToken ct = default)
+    {
+        var rawStats = await _context.Markers
+            .AsNoTracking()
+            .Where(m => m.DistrictId == districtId)
+            .GroupBy(m => new { m.Category, m.Status })
+            .Select(g => new { 
+                Category = g.Key.Category, 
+                Status = g.Key.Status, 
+                Count = g.Count() 
+            })
+            .ToListAsync(ct);
+
+        int residents = await _context.Users.CountAsync(u => u.DistrictId == districtId, ct);
+
+        return new DistrictAnalytics(
+            TotalMarkers: rawStats.Sum(x => x.Count),
+            ResidentsCount: residents,
+            ResolvedIssuesCount: rawStats.Where(x => x.Category == MarkerCategory.Issue && x.Status == MarkerStatus.Resolved).Sum(x => x.Count),
+            TotalIssuesCount: rawStats.Where(x => x.Category == MarkerCategory.Issue).Sum(x => x.Count),
+            OngoingEventsCount: rawStats.Where(x => x.Category == MarkerCategory.Event && x.Status == MarkerStatus.Ongoing).Sum(x => x.Count),
+            NewSuggestionsCount: rawStats.Where(x => x.Category == MarkerCategory.Suggestion && x.Status == MarkerStatus.Review).Sum(x => x.Count),
+            CategoryCounts: rawStats.GroupBy(x => x.Category.ToString()).ToDictionary(g => g.Key, g => g.Sum(x => x.Count))
+        );
+    }
 }

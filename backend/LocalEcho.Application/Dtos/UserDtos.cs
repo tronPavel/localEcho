@@ -1,4 +1,13 @@
+using Microsoft.AspNetCore.Http;
+
 namespace LocalEcho.Application.Dtos;
+
+public record UpdateProfileDto(
+    string? Name,
+    string? HomeAddress,
+    Guid? DistrictId,
+    IFormFile? AvatarFile 
+);
 
 public record UserProfileDto(
     Guid Id,
@@ -8,7 +17,7 @@ public record UserProfileDto(
     string? HomeAddress,
     int Points,
     DateTime CreatedAt,
-    DistrictDto? District,
+    DistrictBriefDto? District,
     IList<string> Roles,
     double? Latitude, 
     double? Longitude  

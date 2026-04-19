@@ -29,25 +29,37 @@ public class UserService : IUserService
         _fileService = fileService;
     }
 
-  public async Task<UserProfileDto> GetProfileAsync(Guid userId)
-{
-    var user = await _userRepository.GetByIdAsync(userId) 
-               ?? throw new KeyNotFoundException("Пользователь не найден."); 
+    public async Task<UserProfileDto> GetProfileAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден."); 
                
-    var roles = await _identityRepository.GetRolesAsync(user);
-    var district = user.DistrictId.HasValue 
-        ? await _districtRepository.GetByIdAsync(user.DistrictId.Value) 
-        : null;
+        var roles = await _identityRepository.GetRolesAsync(user);
     
-    DistrictDto? districtDto = district != null ? new DistrictDto(
-        district.Id, district.Name, district.Description, 
-        district.Centroid.Y, district.Centroid.X, district.IconColor) : null;
+        DistrictBriefDto? districtDto = null;
+        if (user.DistrictId.HasValue)
+        {
+            var districtName = await _districtRepository.GetNameByIdAsync(user.DistrictId.Value);
+            if (districtName != null)
+            {
+                districtDto = new DistrictBriefDto(user.DistrictId.Value, districtName);
+            }
+        }
 
-    return new UserProfileDto(
-        user.Id, user.Email!, user.Name ?? "User", user.AvatarUrl, user.HomeAddress, user.Points, user.CreatedAt, districtDto, roles,
-        user.HomeLocation?.Y, user.HomeLocation?.X
-    );
-}
+        return new UserProfileDto(
+            user.Id, 
+            user.Email!, 
+            user.Name ?? "User", 
+            user.AvatarUrl, 
+            user.HomeAddress, 
+            user.Points, 
+            user.CreatedAt, 
+            districtDto, 
+            roles,
+            user.HomeLocation?.Y, 
+            user.HomeLocation?.X 
+        );
+    }
 
 public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
 {

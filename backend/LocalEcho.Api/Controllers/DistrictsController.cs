@@ -10,27 +10,25 @@ public class DistrictsController : ControllerBase
 {
     private readonly IDistrictService _service;
 
-    public DistrictsController(IDistrictService service)
-    {
-        _service = service;
-    }
+    public DistrictsController(IDistrictService service) => _service = service;
 
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetAll()
-    {
-        var districts = await _service.GetAllActiveDistrictsAsync();
-        return Ok(new { success = true, data = districts });
-    }
-    
-    [HttpGet("find-by-coords")]
-    public async Task<IActionResult> GetByCoords([FromQuery] double lat, [FromQuery] double lng)
+    [HttpGet] // Краткий список для Select-ов
+    public async Task<IActionResult> GetList() 
+        => Ok(await _service.GetListAsync());
+
+    [HttpGet("map")] // Данные для отрисовки слоев на карте
+    public async Task<IActionResult> GetForMap() 
+        => Ok(await _service.GetForMapAsync());
+
+    [HttpGet("{id:guid}/details")] // Статистика для модалки района
+    public async Task<IActionResult> GetDetails(Guid id) 
+        => Ok(await _service.GetDetailAsync(id));
+
+    [HttpGet("find")] // Reverse geocoding (где я нахожусь?)
+    public async Task<IActionResult> FindByCoords([FromQuery] double lat, [FromQuery] double lng)
     {
         var district = await _service.GetDistrictByCoordsAsync(lat, lng);
-    
-        if (district == null) 
-            return NotFound(new { success = false, message = "Район не найден" });
-    
-        return Ok(new { success = true, data = district });
+        if (district == null) return NotFound("Территория не входит в зоны обслуживания.");
+        return Ok(district);
     }
 }

@@ -23,8 +23,7 @@ public class MarkersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Create([FromForm] CreateMarkerDto dto)
     {
-        var districtId = Guid.Parse(User.FindFirst("DistrictId")?.Value ?? Guid.Empty.ToString());
-        var id = await _service.CreateMarkerAsync(dto, GetUserId(), districtId);
+        var id = await _service.CreateMarkerAsync(dto, GetUserId());
         return CreatedAtAction(nameof(GetById), new { id }, null);
     }
 

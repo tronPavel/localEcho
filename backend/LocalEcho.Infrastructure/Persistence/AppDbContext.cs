@@ -10,9 +10,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<Marker> Markers => Set<Marker>();
     public DbSet<District> Districts => Set<District>();
     public DbSet<Vote> Votes => Set<Vote>();
-    
     public DbSet<MarkerImage> MarkerImages => Set<MarkerImage>();
-
+    public DbSet<MarkerResolution> MarkerResolutions => Set<MarkerResolution>();
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -78,7 +77,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.HasKey(d => d.Id);
             entity.Property(d => d.Name).IsRequired().HasMaxLength(100);
             entity.Property(d => d.Description).HasMaxLength(500);
-            entity.Property(d => d.IconColor).HasMaxLength(7);
             
             entity.Property(d => d.Boundaries)
                   .HasColumnType("geometry(Polygon, 4326)")

@@ -15,6 +15,7 @@ public class MarkerService : IMarkerService
     private readonly GeometryFactory _geometryFactory;
     private readonly IFileService _fileService;
     private readonly IIdentityRepository _identityRepository;
+    private readonly IDistrictRepository _districtRepository;
     
 
     public MarkerService(
@@ -23,7 +24,8 @@ public class MarkerService : IMarkerService
         IUnitOfWork unitOfWork,
         GeometryFactory geometryFactory,
         IFileService fileService,
-        IIdentityRepository identityRepository)
+        IIdentityRepository identityRepository,
+        IDistrictRepository districtRepository)
     {
         _markerRepository = markerRepository;
         _userRepository = userRepository;
@@ -31,57 +33,60 @@ public class MarkerService : IMarkerService
         _geometryFactory = geometryFactory;
         _fileService = fileService;
         _identityRepository = identityRepository;
+        _districtRepository = districtRepository;
     }
 
-    public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId)
+public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
+{
+    if (dto.Points == null || dto.Points.Count == 0)
+        throw new ArgumentException("Координаты отсутствуют");
+
+    var user = await _userRepository.GetByIdAsync(userId);
+    var roles = await _identityRepository.GetRolesAsync(user!);
+    bool isStaff = roles.Any(r => r is "Admin" or "Official");
+
+    // 1. Собираем геометрию
+    Geometry location;
+    if (dto.Points.Count == 1) 
     {
-        if (dto.Points == null || dto.Points.Count == 0)
-            throw new ArgumentException("Координаты отсутствуют");
-
-        // Получаем актуальные роли из базы для защиты
-        var user = await _userRepository.GetByIdAsync(userId);
-        var roles = await _identityRepository.GetRolesAsync(user!);
-        bool isStaff = roles.Any(r => r is "Admin" or "Official");
-
-        Geometry location;
-
-        // 1. Сборка геометрии в зависимости от кол-ва точек
-        if (dto.Points.Count == 1) // Обычная точка
-        {
-            var p = dto.Points[0];
-            location = _geometryFactory.CreatePoint(new Coordinate(p.Lng, p.Lat));
-        }
-        else // Полигон (Зона)
-        {
-            if (!isStaff) throw new UnauthorizedAccessException("Только верифицированные лица могут создавать зоны.");
-
-            var coords = dto.Points.Select(p => new Coordinate(p.Lng, p.Lat)).ToList();
-        
-            // Замыкаем полигон для PostGIS (первая точка == последняя)
-            if (!coords.First().Equals2D(coords.Last()))
-                coords.Add(new Coordinate(coords.First().X, coords.First().Y));
-
-            location = _geometryFactory.CreatePolygon(coords.ToArray());
-        }
-
-        // 2. Создание сущности
-        var marker = Marker.Create(dto.Title, location, dto.Category, userId, districtId, dto.Description, dto.ScheduledAt);
-        // 3. Атомарная работа с файлами
-        if (dto.ImageFiles != null && dto.ImageFiles.Any())
-        {
-            foreach (var file in dto.ImageFiles)
-            {
-                using var stream = file.OpenReadStream();
-                var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
-                marker.Images.Add(MarkerImage.ForMarker(url, marker.Id));
-            }
-        }
-
-        await _markerRepository.AddAsync(marker);
-        await _unitOfWork.SaveChangesAsync(); 
-
-        return marker.Id;
+        location = _geometryFactory.CreatePoint(new Coordinate(dto.Points[0].Lng, dto.Points[0].Lat));
     }
+    else 
+    {
+        if (!isStaff) throw new UnauthorizedAccessException("Только верифицированные лица могут создавать зоны.");
+        var coords = dto.Points.Select(p => new Coordinate(p.Lng, p.Lat)).ToList();
+        if (!coords.First().Equals2D(coords.Last())) coords.Add(new Coordinate(coords.First().X, coords.First().Y));
+        location = _geometryFactory.CreatePolygon(coords.ToArray());
+    }
+    location.SRID = 4326;
+
+    // 2. ГЕО-АВТОМАТИКА: Находим район по координатам (или null)
+    Guid? autoDistrictId = null;
+    var searchPoint = location is Point p ? p : location.Centroid;
+    
+    // Вызываем репозиторий: "В какой полигон входит эта точка?"
+    var district = await _districtRepository.GetDistrictByCoordinatesAsync(searchPoint);
+    if (district != null) autoDistrictId = district.Id;
+
+    // 3. Создаем маркер (autoDistrictId может быть null)
+    var marker = Marker.Create(dto.Title, location, dto.Category, userId, autoDistrictId, dto.Description, dto.ScheduledAt);
+
+    // 4. Фото (как и было)
+    if (dto.ImageFiles != null && dto.ImageFiles.Any())
+    {
+        foreach (var file in dto.ImageFiles)
+        {
+            using var stream = file.OpenReadStream();
+            var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
+            marker.Images.Add(MarkerImage.ForMarker(url, marker.Id));
+        }
+    }
+
+    await _markerRepository.AddAsync(marker);
+    await _unitOfWork.SaveChangesAsync(); 
+
+    return marker.Id;
+}
 
     public async Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams)
     {

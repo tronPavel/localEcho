@@ -4,7 +4,7 @@ namespace LocalEcho.Application.Interfaces;
 
 public interface IMarkerService
 {
-    Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId, Guid districtId);
+    Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId);
     
     Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams);
     

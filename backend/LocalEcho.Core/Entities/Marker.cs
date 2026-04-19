@@ -14,7 +14,7 @@ public class Marker
     public MarkerCategory Category { get; private set; }
     public MarkerStatus Status { get; private set; }
     public Guid CreatedByUserId { get; private set; }
-    public Guid DistrictId { get; private set; }
+    public Guid? DistrictId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ScheduledAt { get; private set; } 
     public DateTime? ExpiresAt { get; private set; } 
@@ -28,14 +28,14 @@ public class Marker
 
     private Marker() { }
 
-    private Marker(string title, Geometry location, MarkerCategory category, Guid createdByUserId, Guid districtId, string? description, DateTime? scheduledAt)
+    private Marker(string title, Geometry location, MarkerCategory category, Guid createdByUserId, Guid? districtId, string? description, DateTime? scheduledAt)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
         Location = location;
         Category = category;
         CreatedByUserId = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("Creator required");
-        DistrictId = districtId != Guid.Empty ? districtId : throw new ArgumentException("District required");
+        DistrictId = districtId;
         Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
         CreatedAt = DateTime.UtcNow;
         Rating = 0;
@@ -55,7 +55,7 @@ public class Marker
     }
 
     public static Marker Create(string title, Geometry location, MarkerCategory category, 
-        Guid createdByUserId, Guid districtId, string? description = null, DateTime? scheduledAt = null)
+        Guid createdByUserId, Guid? districtId, string? description = null, DateTime? scheduledAt = null)
     {
         // Валидация
         if (category == MarkerCategory.Event && !scheduledAt.HasValue)

@@ -26,16 +26,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Resources\SeedImages\announcement.png">
+      <None Update="Resources\SeedImages\img1.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Resources\SeedImages\avatar1.png">
+      <None Update="Resources\SeedImages\img3.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Resources\SeedImages\event.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\SeedImages\issue.png">
+      <None Update="Resources\SeedImages\img4.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

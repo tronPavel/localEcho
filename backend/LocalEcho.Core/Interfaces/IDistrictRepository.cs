@@ -11,4 +11,5 @@ public interface IDistrictRepository
     Task AddAsync(District district, CancellationToken ct = default);
     Task<District?> GetDistrictByCoordinatesAsync(Point p, CancellationToken ct = default);
     Task<bool> IsPointInDistrictAsync(Point p, Guid districtId);
+    Task<DistrictAnalytics> GetAnalyticsAsync(Guid districtId, CancellationToken ct = default);
 }

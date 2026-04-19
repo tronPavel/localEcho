@@ -33,16 +33,13 @@ public class MarkerRepository : IMarkerRepository
     {
         var query = _context.Markers.AsNoTracking();
 
-        // 1. Фильтры по категории и статусу
         if (filter.Category.HasValue) query = query.Where(m => m.Category == filter.Category.Value);
         if (filter.Status.HasValue)   query = query.Where(m => m.Status == filter.Status.Value);
 
-        // 2. Пространственный фильтр (Bounding Box)
         if (filter.HasBoundingBox())
         {
             var factory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
             
-            // Envelope в NTS — это прямоугольник (XMin, XMax, YMin, YMax)
             var envelope = new Envelope(
                 filter.MinLng!.Value, filter.MaxLng!.Value, 
                 filter.MinLat!.Value, filter.MaxLat!.Value);
@@ -50,7 +47,6 @@ public class MarkerRepository : IMarkerRepository
             var boundingBox = factory.ToGeometry(envelope);
             boundingBox.SRID = 4326;
 
-            // PostGIS нативно проверит пересечение любой нашей геометрии с этим квадратом
             query = query.Where(m => m.Location.Intersects(boundingBox));
         }
 
@@ -61,8 +57,6 @@ public class MarkerRepository : IMarkerRepository
 
     public async Task<MarkerDetail?> GetDetailAsync(Guid markerId, Guid? currentUserId, CancellationToken ct = default)
     {
-        // Запрос остается почти таким же, т.к. m.Location — это теперь просто объект Geometry
-        // который спокойно лежит внутри Marker
         return await _context.Markers
             .AsNoTracking()
             .Include(m => m.Images)

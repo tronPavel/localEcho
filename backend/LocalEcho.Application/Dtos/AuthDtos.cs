@@ -1,6 +1,33 @@
 using System.ComponentModel.DataAnnotations;
 
+
 namespace LocalEcho.Application.Dtos;
+
+public record AuthResponseDto(
+    string Token,
+    string RefreshToken,
+    DateTime Expires,
+    string UserId,
+    string Email,
+    string Name,
+    string? AvatarUrl,
+    Guid? DistrictId,
+    string? DistrictName,
+    int Points,
+    List<string> Roles,
+    double? Latitude,  
+    double? Longitude  
+);
+
+public record RefreshTokenDto(
+    [Required] string Token,
+    [Required] string RefreshToken
+);
+
+public record LoginDto(
+    [Required] [EmailAddress] string Email,
+    [Required] string Password
+);
 
 public record RegisterDto
 {

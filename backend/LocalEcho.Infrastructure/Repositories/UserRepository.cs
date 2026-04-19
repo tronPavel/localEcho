@@ -1,4 +1,5 @@
 using LocalEcho.Application.Interfaces;
+using LocalEcho.Core.Entities;
 using LocalEcho.Core.Entities.Identity;
 using LocalEcho.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -37,16 +38,27 @@ public class UserRepository : IUserRepository
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.Points, u => u.Points + delta), ct);
     }
 
-    public async Task<IEnumerable<ApplicationUser>> GetTopUsersAsync(int count, Guid? districtId)
+    public async Task<IEnumerable<RankingRecord>> GetLeaderboardAsync(int count, Guid? districtId)
     {
-        var query = _context.Users.AsNoTracking();
+        if (districtId.HasValue && districtId.Value != Guid.Empty)
+        {
+            return await _context.Markers
+                .AsNoTracking()
+                .Where(m => m.DistrictId == districtId.Value)
+                .GroupBy(m => m.CreatedByUserId)
+                .Select(g => new { UserId = g.Key, LocalPoints = g.Sum(m => m.Rating) })
+                .OrderByDescending(x => x.LocalPoints)
+                .Take(count)
+                .Join(_context.Users, stat => stat.UserId, user => user.Id, (stat, user) => 
+                    new RankingRecord(user.Id, user.Name ?? "Аноним", user.AvatarUrl, stat.LocalPoints))
+                .ToListAsync();
+        }
 
-        if (districtId.HasValue)
-            query = query.Where(u => u.DistrictId == districtId.Value);
-
-        return await query
+        return await _context.Users
+            .AsNoTracking()
             .OrderByDescending(u => u.Points)
             .Take(count)
+            .Select(u => new RankingRecord(u.Id, u.Name ?? "Аноним", u.AvatarUrl, u.Points))
             .ToListAsync();
     }
 }

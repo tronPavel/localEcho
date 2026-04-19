@@ -14,13 +14,13 @@ public class LeaderboardService : ILeaderboardService
 
     public async Task<IEnumerable<LeaderboardEntryDto>> GetTopUsersAsync(Guid? districtId)
     {
-        var users = await _userRepository.GetTopUsersAsync(10, districtId);
-        
-        return users.Select(u => new LeaderboardEntryDto(
-            u.Id,
-            u.Name ?? u.UserName ?? "Anonymous",   
-            u.AvatarUrl,
-            u.Points
+        var records = await _userRepository.GetLeaderboardAsync(10, districtId);
+
+        return records.Select(r => new LeaderboardEntryDto(
+            r.UserId, 
+            r.Name, 
+            r.AvatarUrl, 
+            r.Points
         ));
     }
 }
