@@ -9,6 +9,8 @@ import {DrawingPreviewLayer} from "@/pages/map/components/DrawingPreviewLayer.ts
 import {getCategoryColor} from "@/entities/marker/lib/getCategoryColor.ts";
 import {GeomanControl} from "@/pages/map/components/GeomanControl.tsx";
 import {DistrictsLayer} from "@/pages/map/components/DistrictsLayer.tsx";
+import {SearchControl} from "@/pages/map/components/SearchControl.tsx";
+import {PositionControl} from "@/pages/map/components/PositionControl.tsx";
 
 interface MapViewProps {
     markers: MarkerMapDto[];
@@ -30,7 +32,8 @@ export const MapView = ({ markers }: MapViewProps) => {
             <MapBoundsTracker />
             <GeomanControl />
             <DrawingPreviewLayer />
-
+            <SearchControl />
+            <PositionControl />
             {markers
                 .filter(m => m.geometryType === 'Polygon')
                 .map(m => (

@@ -1,0 +1,64 @@
+.leaflet-control-geosearch form {
+    background-color: #fff;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--color-input-bg);
+    box-shadow: var(--shadow-soft);
+}
+
+.leaflet-control-geosearch form input {
+    height: 48px ;
+    padding: 0 16px ;
+    font-family: 'Inter', sans-serif;
+}
+
+.leaflet-control-geosearch .results.active {
+    background-color: #fff;
+    border-radius: var(--radius-md);
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.leaflet-control-geosearch .results > * {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.leaflet-control-geosearch .results > *:hover {
+    background-color: var(--color-input-bg);
+    color: var(--color-primary);
+}
+
+.leaflet-control-geosearch a.reset:hover {
+    background-color: var(--color-accent-yellow);
+}
+
+.leaflet-control-geosearch form input:before {
+    content: "🔍";
+    color: var(--color-primary);
+    font-size: 16px;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.leaflet-control-geosearch a.reset {
+    background-color: transparent;
+    color: var(--text-muted);
+    line-height: 30px;
+}
+
+.leaflet-control-geosearch a.reset:hover {
+    color: var(--color-error);
+}
+
+.leaflet-control-geosearch form input {
+    padding-left: 36px;
+}
+
+.leaflet-bar {
+    border: none;
+}
