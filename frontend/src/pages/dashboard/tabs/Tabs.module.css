@@ -1,0 +1,360 @@
+.tabContent {
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+}
+
+.statsOverview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.bigStatCard {
+    padding: 32px;
+    background: #fff;
+    border-radius: var(--radius-lg);
+    border: 1px solid #e5e7eb;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bigStatCard span {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.bigStatCard h2 {
+    font-size: 48px;
+    color: var(--color-primary);
+    margin: 0;
+}
+
+/* Прогресс бары */
+.chartPlate {
+    background: #fff;
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 24px;
+}
+
+.progressBarWrapper {
+    height: 12px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.barFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), #10b981);
+    transition: width 1s ease-in-out;
+}
+
+/* Список ТОП районов */
+.distLine {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.distLine b {
+    color: var(--color-primary);
+    background: var(--color-input-bg);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.tabHeader {
+    margin-bottom: 48px;
+}
+
+.tabHeader h2 {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--color-primary);
+    margin-bottom: 24px;
+}
+
+.searchBox {
+    position: relative;
+    max-width: 500px;
+}
+
+/* СЕТКА ПОЛЬЗОВАТЕЛЕЙ */
+.userGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.userCard {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: white;
+    border: 1.5px solid #f1f5f9;
+    padding: 20px 32px;
+    border-radius: var(--radius-md);
+    transition: var(--transition-fast);
+}
+
+.userCard:hover {
+    border-color: var(--color-primary);
+    transform: translateX(10px);
+}
+
+.uInfo { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+.uMain { display: flex; align-items: center; gap: 8px; }
+.uMain strong { font-size: 18px; color: var(--color-primary); }
+.uEmail { color: var(--text-muted); font-size: 14px; }
+
+.rolesList {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.roleTag {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: var(--color-input-bg);
+    color: var(--color-primary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.uActions { display: flex; gap: 12px; }
+
+.emptyState {
+    padding: 80px;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--color-bg-warm);
+    border-radius: var(--radius-md);
+    border: 2px dashed #e2e8f0;
+}
+/* Добавь в конец файла src/pages/dashboard/tabs/Tabs.module.css */
+
+.taskTable {
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid #f1f5f9;
+    overflow: hidden; /* Чтобы скругления работали у таблицы */
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    background: var(--color-input-bg);
+    padding: 18px 24px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tr {
+    transition: background 0.2s;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.tr:hover {
+    background: var(--color-bg-warm);
+}
+
+.table td {
+    padding: 20px 24px;
+    font-size: 14px;
+}
+
+.tdCategory { font-size: 20px; width: 40px; }
+.tdTitle { font-weight: 700; color: var(--color-primary); }
+.tdDate { color: var(--text-muted); font-size: 13px; }
+
+.taskPoints {
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.miniBadge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: rgba(6, 78, 59, 0.05);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.tdActions {
+    display: flex;
+    justify-content: flex-end;
+}
+/* В конец файла Tabs.module.css */
+
+.districtsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.districtMiniCard {
+    background: white;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid #f1f5f9;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.districtMiniCard h4 { margin: 0; color: var(--color-primary); font-size: 18px; }
+.districtMiniCard p { font-size: 13px; color: var(--text-muted); }
+
+.districtMiniCard button {
+    background: var(--color-input-bg);
+    color: var(--color-primary);
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.districtMiniCard button:hover { background: var(--color-accent-yellow); }
+
+.editorBox {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    border: 1px solid #e2e8f0;
+}
+
+.editorHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+.statsOverview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px; margin-bottom: 32px;
+}
+.bigStatCard {
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    background: white; border: 2px solid var(--color-input-bg);
+}
+.chartPlate {
+    background: #fdfdfd;
+    padding: 30px;
+    border-radius: var(--radius-md);
+    border: 1px solid #f1f5f9;
+}
+.progressBarWrapper {
+    height: 20px;
+    background: #eee;
+    border-radius: 10px;
+    margin: 15px 0;
+    position: relative;
+    overflow: hidden;
+}
+.barFill {
+    height: 100%;
+    background: var(--color-success);
+    border-radius: 10px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.backBtn {
+    margin-bottom: 20px;
+    padding: 8px 16px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.backBtn:hover {
+    background: #e2e8f0;
+}
+
+.editorContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn 0.3s ease;
+}
+
+.formSide {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    background: #fdfaf6;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    border: 1px solid #eee;
+}
+
+.districtsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.districtMiniCard {
+    background: white;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.districtMiniCard h4 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--color-primary);
+}
+
+.districtMiniCard button {
+    background: var(--color-input-bg);
+    color: var(--color-primary);
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.districtMiniCard button:hover {
+    background: var(--color-accent-yellow);
+}

@@ -1,34 +1,46 @@
 import { api } from "@/shared/api/apiInstance";
-import type {Coordinate} from "@/entities/marker/model/types.ts";
-import type {DistrictDto} from "@/features/auth/model/types.ts";
+import type {
+    DistrictBriefDto,
+    DistrictMapDto,
+    DistrictDetailDto
+} from "../model/types";
+import type { Coordinate } from "@/entities/marker";
 
-export interface DistrictMapDto {
-    id: string;
-    name: string;
-    geometry: Coordinate[];
-    centroid: Coordinate;
-}
-export interface DistrictBriefDto {
-    id: string;
-    name: string;
-}
-export const getDistrictsList = async (): Promise<DistrictBriefDto[]> => {
-    const response = await api.get('/districts'); // На бэке это GetListAsync()
-    return response.data;
-};
+export const districtApi = {
 
-export const getDistrictsForMap = async (): Promise<DistrictMapDto[]> => {
-    const response = await api.get('/districts/map');
-    return response.data;
-};
+    getList: async (): Promise<DistrictBriefDto[]> => {
+        const response = await api.get('/districts');
+        return response.data;
+    },
 
-export const getDistrictDetails = async (id: string) => {
-    const response = await api.get(`/districts/${id}/details`);
-    return response.data;
-};
-export const findDistrictByCoords = async (lat: number, lng: number): Promise<DistrictDto> => {
-    const response = await api.get('/districts/find', {
-        params: { lat, lng }
-    });
-    return response.data.data;
+    getForMap: async (): Promise<DistrictMapDto[]> => {
+        const response = await api.get('/districts/map');
+        return response.data;
+    },
+
+    getDetails: async (id: string): Promise<DistrictDetailDto> => {
+        const response = await api.get(`/districts/${id}/details`);
+        return response.data;
+    },
+
+    findByCoords: async (lat: number, lng: number): Promise<DistrictBriefDto> => {
+        const response = await api.get('/districts/find', {
+            params: { lat, lng }
+        });
+        return response.data;
+    },
+
+
+    admin: {
+        create: async (data: { name: string; description: string; geometry: Coordinate[] }) => {
+            const response = await api.post('/admin/districts', data);
+            return response.data;
+        },
+        update: async (id: string, data: { name: string; description: string; geometry: Coordinate[] }) => {
+            await api.put(`/admin/districts/${id}`, data);
+        },
+        delete: async (id: string) => {
+            await api.delete(`/admin/districts/${id}`);
+        }
+    }
 };

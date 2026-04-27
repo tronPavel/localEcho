@@ -1,0 +1,66 @@
+.container {
+    display: flex;
+    height: calc(100vh - 72px); /* Высота экрана минус хедер */
+    background-color: #fff;
+}
+
+.sidebar {
+    width: 280px;
+    background-color: var(--color-bg-warm);
+    border-right: 1.5px solid rgba(6, 78, 59, 0.05);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebarHeader h3 {
+    color: var(--color-primary);
+    font-weight: 900;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+}
+
+.accentLine {
+    width: 40px;
+    height: 4px;
+    background: var(--color-accent-yellow);
+    margin-top: 8px;
+    border-radius: 2px;
+}
+
+.nav {
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.link {
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.link:hover {
+    background-color: rgba(6, 78, 59, 0.05);
+    color: var(--color-primary);
+}
+
+.active {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 60px;
+    background-color: white;
+}

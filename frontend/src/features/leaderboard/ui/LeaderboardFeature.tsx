@@ -5,7 +5,7 @@ import { UserAvatar } from '@/entities/user/ui/UserAvatar';
 import { getLeaderboard } from '../model/leaderboardApi';
 import { useAuthStore } from '@/features/auth/model/authStore';
 import styles from './LeaderboardFeature.module.css';
-import {getDistrictsList} from "@/entities/district/model/districtApi.ts";
+import {districtApi} from "@/entities/district/model/districtApi.ts";
 import {classNames} from "@/shared/lib/utils/classNames.ts";
 
 export const LeaderboardFeature = () => {
@@ -19,7 +19,7 @@ export const LeaderboardFeature = () => {
 
     const { data: districts = [] } = useQuery({
         queryKey: ['districts-list'],
-        queryFn: getDistrictsList,
+        queryFn: districtApi.getList,
     });
 
     const getCrown = (rank: number) => {

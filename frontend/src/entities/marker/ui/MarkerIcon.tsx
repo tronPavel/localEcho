@@ -1,31 +1,30 @@
 import L from 'leaflet';
 import { getCategoryColor } from '../lib/getCategoryColor';
+import './MarkerStyles.css';
 
-export const createMarkerIcon = (category: string) => {
-    const isOfficial = category === 'Project'; // Временно определяем по категории
+/**
+ * Создает иконку маркера.
+ * Вся визуализация перенесена в CSS (.m-icon-container и т.д.)
+ */
+export const createMarkerIcon = (category: string, status: string) => {
     const color = getCategoryColor(category);
+    const isResolved = status === 'Resolved' || status === 'Passed' || status === 'Archived';
+    const isPulsing = category === 'Project' || (category === 'Issue' && status === 'InProgress');
 
-    const className = isOfficial ? 'custom-marker custom-marker-pulsing' : 'custom-marker';
+    // Формируем список классов
+    const classList = [
+        'm-icon-body',
+        isPulsing ? 'm-icon--pulsing' : '',
+        isResolved ? 'm-icon--resolved' : ''
+    ].join(' ');
 
     return L.divIcon({
-        className: className,
+        className: 'm-icon-container',
         html: `
-            <div style="
-                background-color: ${color}; 
-                width: 24px; 
-                height: 24px; 
-                border-radius: 50%; 
-                border: 2px solid white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                color: white;
-                font-size: 10px;
-                font-weight: bold;
-            ">
-                ${isOfficial ? '🏛' : ''} 
-            </div>`,
+            <div class="${classList}" style="background-color: ${color};">
+                ${category === 'Project' ? '🏛' : '<div class="m-icon-dot"></div>'}
+            </div>
+        `,
         iconSize: [24, 24],
         iconAnchor: [12, 12],
     });

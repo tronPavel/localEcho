@@ -73,3 +73,16 @@
     align-items: center;
     gap: 8px;
 }
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Все приложение ровно на высоту экрана */
+    width: 100vw;
+    overflow: hidden;
+}
+
+.content {
+    flex: 1; /* Занимает всё место под хедером */
+    height: 0; /* Технический хак для корректного flex-overflow */
+    display: flex;
+}

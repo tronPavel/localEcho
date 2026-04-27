@@ -60,21 +60,21 @@ export const useRestoreAuth = () => {
 
 export const usePermissions = () => {
     const { user, isAuthenticated } = useAuthStore();
-    const roles = user?.roles || [];
 
-    const isAdmin = roles.includes('Admin');
-    const isModerator = roles.includes('Moderator');
-    const isOfficial = roles.includes('Official');
+    const roles = (user?.roles || []).map(r => r.toLowerCase());
+
+    const isAdmin = roles.includes('admin');
+    const isModerator = roles.includes('moderator');
+    const isOfficial = roles.includes('official');
 
     return {
         isAuthenticated,
-        isGuest: !isAuthenticated,
         isAdmin,
         isModerator,
         isOfficial,
+        canAccessDashboard: isAdmin || isModerator || isOfficial,
         canDrawPolygons: isAdmin || isOfficial,
         canResolveMarkers: isAdmin || isOfficial,
-        canAccessAdmin: isAdmin || isModerator,
         isOwner: (createdById: string) => user?.userId === createdById,
     };
 };

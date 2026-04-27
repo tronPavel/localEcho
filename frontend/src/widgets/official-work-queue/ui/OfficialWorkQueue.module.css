@@ -1,0 +1,49 @@
+.container {
+    width: 100%;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: var(--color-input-bg);
+    text-align: left;
+    padding: 16px 24px;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.row {
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.row:hover {
+    background: var(--color-bg-warm);
+}
+
+.table td {
+    padding: 16px 24px;
+    font-size: 14px;
+}
+
+.title { font-weight: 700; color: var(--color-primary); }
+.rating { font-weight: 800; color: var(--color-accent-yellow); }
+.date { color: var(--text-muted); font-size: 13px; }
+
+.statusBadge {
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(6, 78, 59, 0.05);
+    padding: 4px 8px;
+    border-radius: 4px;
+}

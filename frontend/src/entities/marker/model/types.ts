@@ -1,56 +1,58 @@
 export type MarkerCategory = 'Issue' | 'Event' | 'Announcement' | 'Suggestion' | 'Project';
+export type MarkerStatus =
+    | 'Active' | 'InProgress' | 'Resolved'
+    | 'Upcoming' | 'Ongoing' | 'Passed'
+    | 'Current' | 'Archived'
+    | 'Review' | 'Accepted' | 'Rejected';
 export interface Coordinate {
     lat: number;
     lng: number;
 }
 
-export interface MarkerMapDto {
-    id: string;
-    title: string;
-    category: 'Issue' | 'Event' | 'Announcement' | 'Suggestion' | 'Project';
-    status: string;
-    geometryType: 'Point' | 'Polygon'; // Приходит с бэкенда
-    coordinates: Coordinate[];        // Массив точек фигуры
-    centroid: Coordinate;              // Геометрический центр для иконки
-}
-export interface MarkerResolutionDto {
+export interface MarkerResolutionResponse {
     comment: string;
     authorName: string;
     createdAt: string;
     imageUrls: string[];
 }
 
-export interface MarkerDetailDto {
-    expiresAt?: string;
-    scheduledAt?: string;
+export interface MarkerMapResponse {
+    id: string;
+    title: string;
+    category: MarkerCategory;
+    status: string;
+    geometryType: 'Point' | 'Polygon';
+    coordinates: Coordinate[];
+    centroid: Coordinate;
+}
+
+export interface MarkerDetailResponse {
     id: string;
     title: string;
     description?: string;
     imageUrls: string[];
     category: MarkerCategory;
-    status: string; // Зависит от категории (см. бэкенд)
-
+    status: MarkerStatus;
     creatorId: string;
     creatorName: string;
     creatorAvatarUrl?: string;
-
     rating: number;
     userVote: number;
-
     createdAt: string;
     updatedAt?: string;
-
     geometryType: 'Point' | 'Polygon';
     coordinates: Coordinate[];
-
-    resolution?: MarkerResolutionDto;
+    resolutions?: MarkerResolutionResponse[];
+    expiresAt?: string;
+    scheduledAt?: string;
 }
 
-export interface CreateMarkerDto {
+export interface CreateMarkerRequest {
     title: string;
     description?: string;
     category: MarkerCategory;
-    points: Coordinate[]; // МАССИВ вместо одиночных Lat/Lng
+    points: Coordinate[];
     imageFiles?: File[];
-    scheduledAt?: string; // Для эвентов
+    scheduledAt?: string;
 }
+

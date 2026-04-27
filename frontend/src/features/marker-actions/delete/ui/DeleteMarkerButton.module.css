@@ -1,0 +1,16 @@
+.deleteBtn {
+    border-color: #fecaca; /* Розовый бордюр */
+    color: #ef4444;        /* Красный текст */
+    background: transparent;
+    transition: all var(--transition-fast) !important;
+}
+
+.deleteBtn:hover {
+    background: #fef2f2; /* Бледно-красный фон при наведении */
+    border-color: #ef4444;
+    transform: translateY(-1px);
+}
+
+.deleteBtn:active {
+    transform: translateY(0);
+}

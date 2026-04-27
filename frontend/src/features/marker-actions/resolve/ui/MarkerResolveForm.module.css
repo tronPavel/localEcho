@@ -1,0 +1,41 @@
+.form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.officialHeader {
+    background: var(--color-primary);
+    padding: 24px 32px;
+    border-radius: var(--radius-md);
+    color: white;
+    margin-bottom: 8px;
+}
+
+.officialHeader h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.officialHeader p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.controlsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 32px;
+    border-top: 1px solid #f1f5f9;
+}

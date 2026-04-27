@@ -1,10 +1,13 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { getImageUrl } from "@/shared/api/apiInstance";
-
+//@ts-ignore
 import 'swiper/css';
+//@ts-ignore
 import 'swiper/css/navigation';
+//@ts-ignore
 import 'swiper/css/pagination';
+
 import styles from './ImageSlider.module.css';
 
 interface ImageSliderProps {

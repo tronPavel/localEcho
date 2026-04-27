@@ -10,7 +10,7 @@ import { UserAvatar } from '@/entities/user/ui/UserAvatar';
 import { ImageUploader } from '@/shared/ui/ImageUploader/ImageUploader';
 
 import { getMyProfile, updateProfile } from '@/entities/user/model/userApi';
-import { getDistrictsList } from '@/entities/district/model/districtApi';
+import {districtApi} from '@/entities/district/model/districtApi';
 import { logout } from '../model/authApi';
 import { useAuthStore } from '../model/authStore';
 import type { UpdateProfileDto } from '@/entities/user/model/types';
@@ -36,7 +36,7 @@ export const ProfileFeature = ({ onActionSuccess }: ProfileFeatureProps) => {
 
     const { data: districts = [] } = useQuery({
         queryKey: ['districts-list'],
-        queryFn: getDistrictsList
+        queryFn: districtApi.getList
     });
 
     const { register, handleSubmit, setValue, formState: { errors } } = useForm<UpdateProfileDto>();

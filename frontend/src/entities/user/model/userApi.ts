@@ -17,3 +17,13 @@ export const updateProfile = async (data: UpdateProfileDto) => {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
+export const searchUsers = async (query: string): Promise<UserProfileDto[]> => {
+    const response = await api.get('/admin/users/search', { params: { q: query } });
+    return response.data;
+};
+
+export const updateUserRole = async (userId: string, roleName: string) => {
+    await api.post(`/admin/users/${userId}/role`, JSON.stringify(roleName), {
+        headers: { 'Content-Type': 'application/json' }
+    });
+};

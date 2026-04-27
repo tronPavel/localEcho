@@ -9,9 +9,9 @@ import { Select } from '@/shared/ui/Select/Select';
 import { Button } from '@/shared/ui/Button/Button';
 
 import { registerSchema } from '../lib/validateAuth';
-import { register as registerUserApi } from '../model/authApi'; // Переименовали, чтобы не было конфликта
+import { register as registerUserApi } from '../model/authApi';
 import { useAuthStore } from '../model/authStore';
-import { getDistrictsList, findDistrictByCoords } from "@/entities/district/model/districtApi";
+import { districtApi} from "@/entities/district/model/districtApi";
 import type { RegisterDto } from '../model/types';
 
 import styles from './AuthForms.module.css';
@@ -37,7 +37,7 @@ export const RegisterForm = ({ onSuccess, onSwitch }: RegisterFormProps) => {
 
     const { data: districts = [] } = useQuery({
         queryKey: ['districts-list'],
-        queryFn: getDistrictsList
+        queryFn: districtApi.getList,
     });
 
     const mutation = useMutation({
@@ -70,7 +70,7 @@ export const RegisterForm = ({ onSuccess, onSwitch }: RegisterFormProps) => {
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 try {
-                    const result = await findDistrictByCoords(pos.coords.latitude, pos.coords.longitude);
+                    const result = await districtApi.findByCoords(pos.coords.latitude, pos.coords.longitude);
                     setValue('districtId', result.id, { shouldValidate: true });
                     toast.success(`Ваш район: ${result.name}`);
                 } catch (e) {
