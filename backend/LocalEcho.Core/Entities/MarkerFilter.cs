@@ -1,6 +1,6 @@
 using LocalEcho.Core.Entities;
 
-namespace LocalEcho.Core.Models;
+namespace LocalEcho.Core.Entities;
 
 public record MarkerFilter
 {

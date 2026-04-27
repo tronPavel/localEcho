@@ -114,9 +114,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IMarkerRepository, MarkerRepository>();
 builder.Services.AddScoped<IDistrictRepository, DistrictRepository>();
-
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>(); 
-
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<IdentityRepository>(); 
 builder.Services.AddScoped<IIdentityRepository>(sp => sp.GetRequiredService<IdentityRepository>());
 builder.Services.AddScoped<ITokenRepository>(sp => sp.GetRequiredService<IdentityRepository>());
@@ -131,6 +131,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>(); 
 builder.Services.AddScoped<IDistrictService, DistrictService>(); 
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IModerationService, ModerationService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IOfficialService, OfficialService>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("User", policy => policy.RequireRole("User"));

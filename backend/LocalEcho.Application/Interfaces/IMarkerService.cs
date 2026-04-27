@@ -17,4 +17,6 @@ public interface IMarkerService
     Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId);
     
     Task DeleteMarkerAsync(Guid id, Guid userId);
+
+    Task ReportMarkerAsync(Guid markerId, CreateReportDto dto, Guid reporterId);
 }

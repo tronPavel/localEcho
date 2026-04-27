@@ -4,17 +4,36 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LocalEcho.API.Controllers;
-
 [ApiController]
 [Route("api/admin")]
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IDistrictService _districtService;
+    private readonly IUserService _userService;
 
-    public AdminController(IDistrictService districtService)
+    public AdminController(IDistrictService districtService, IUserService userService)
     {
         _districtService = districtService;
+        _userService = userService;
+    }
+    
+    [HttpGet("users/search")]
+    public async Task<IActionResult> Search([FromQuery] string q)
+        => Ok(await _userService.SearchUsersAsync(q));
+
+    [HttpPost("users/{userId:guid}/role")]
+    public async Task<IActionResult> ChangeRole(Guid userId, [FromBody] string role)
+    {
+        await _userService.AssignRoleAsync(userId, role);
+        return Ok(new { success = true, message = $"Роль {role} успешно назначена." });
+    }
+
+    [HttpDelete("users/{userId:guid}/role/{role}")]
+    public async Task<IActionResult> RemoveRole(Guid userId, string role)
+    {
+        await _userService.RemoveRoleAsync(userId, role);
+        return Ok(new { success = true, message = "Роль отозвана." });
     }
 
     [HttpPost("districts")]

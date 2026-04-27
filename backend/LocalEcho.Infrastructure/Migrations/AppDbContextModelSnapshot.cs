@@ -38,15 +38,12 @@ namespace LocalEcho.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("IconColor")
-                        .HasMaxLength(7)
-                        .HasColumnType("character varying(7)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -127,9 +124,6 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.Property<Point>("HomeLocation")
                         .HasColumnType("geometry(Point, 4326)");
 
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -204,18 +198,31 @@ namespace LocalEcho.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
-                    b.Property<Guid>("DistrictId")
+                    b.Property<Guid?>("DistrictId")
                         .HasColumnType("uuid");
 
-                    b.Property<Point>("Location")
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsHidden")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Geometry>("Location")
                         .IsRequired()
-                        .HasColumnType("geometry(Point, 4326)");
+                        .HasColumnType("geometry(Geometry, 4326)");
 
                     b.Property<int>("Rating")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -246,7 +253,10 @@ namespace LocalEcho.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MarkerId")
+                    b.Property<Guid?>("MarkerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("MarkerResolutionId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Url")
@@ -257,7 +267,38 @@ namespace LocalEcho.Infrastructure.Migrations
 
                     b.HasIndex("MarkerId");
 
+                    b.HasIndex("MarkerResolutionId");
+
                     b.ToTable("MarkerImages");
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.MarkerResolution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MarkerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ResolvedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MarkerId");
+
+                    b.HasIndex("ResolvedByUserId");
+
+                    b.ToTable("MarkerResolutions");
                 });
 
             modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
@@ -381,6 +422,40 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Report", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MarkerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MarkerId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("Reports");
+                });
+
             modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>
                 {
                     b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", "Creator")
@@ -397,8 +472,31 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.HasOne("LocalEcho.Core.Entities.Marker", null)
                         .WithMany("Images")
                         .HasForeignKey("MarkerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LocalEcho.Core.Entities.MarkerResolution", null)
+                        .WithMany("Images")
+                        .HasForeignKey("MarkerResolutionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.MarkerResolution", b =>
+                {
+                    b.HasOne("LocalEcho.Core.Entities.Marker", "Marker")
+                        .WithMany("Resolutions")
+                        .HasForeignKey("MarkerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", "ResolvedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Marker");
+
+                    b.Navigation("ResolvedByUser");
                 });
 
             modelBuilder.Entity("LocalEcho.Core.Entities.Vote", b =>
@@ -467,7 +565,29 @@ namespace LocalEcho.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Report", b =>
+                {
+                    b.HasOne("LocalEcho.Core.Entities.Marker", null)
+                        .WithMany()
+                        .HasForeignKey("MarkerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LocalEcho.Core.Entities.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>
+                {
+                    b.Navigation("Images");
+
+                    b.Navigation("Resolutions");
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.MarkerResolution", b =>
                 {
                     b.Navigation("Images");
                 });

@@ -6,7 +6,7 @@ public record DistrictMapDto(
     Guid Id, 
     string Name, 
     List<CoordinateDto> Geometry, 
-    CoordinateDto Centroid
+    CoordinateDto Centroid     
 );
 
 public record DistrictStatsDto(
@@ -16,7 +16,7 @@ public record DistrictStatsDto(
     double SuccessRate,         
     int OngoingEvents,          
     int NewSuggestionsCount,    
-    Dictionary<string, int> CategoryBreakdown // Категория -> Количество
+    Dictionary<string, int> CategoryBreakdown
 );
 
 public record DistrictDetailDto(
@@ -29,5 +29,5 @@ public record DistrictDetailDto(
 public record CreateDistrictDto(
     string Name,
     string? Description,
-    List<CoordinateDto> Geometry
+    List<CoordinateDto> Geometry 
 );

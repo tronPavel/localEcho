@@ -7,7 +7,6 @@ public class FileService : IFileService
 {
     private readonly IWebHostEnvironment _env;
 
-    // магические байты для форматов изображений, чтоб не закинули .exe файл под видом другого
     private static readonly Dictionary<string, List<byte[]>> _fileSignatures = new()
     {
         { ".jpeg", new List<byte[]> { new byte[] { 0xFF, 0xD8, 0xFF } } },

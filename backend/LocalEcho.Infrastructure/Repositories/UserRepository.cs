@@ -61,4 +61,27 @@ public class UserRepository : IUserRepository
             .Select(u => new RankingRecord(u.Id, u.Name ?? "Аноним", u.AvatarUrl, u.Points))
             .ToListAsync();
     }
+    public async Task<IEnumerable<ApplicationUser>> SearchAsync(string searchTerm, int limit)
+    {
+        var query = _context.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerTerm = searchTerm.ToLower();
+            query = query.Where(u => 
+                (u.Name != null && u.Name.ToLower().Contains(lowerTerm)) || 
+                (u.Email != null && u.Email.ToLower().Contains(lowerTerm)) ||
+                (u.UserName != null && u.UserName.ToLower().Contains(lowerTerm))
+            );
+        }
+
+        return await query
+            .OrderBy(u => u.Name)
+            .Take(limit)
+            .ToListAsync();
+    }
+    public async Task<int> GetTotalCountAsync(CancellationToken ct = default)
+    {
+        return await _context.Users.AsNoTracking().CountAsync(ct);
+    }
 }

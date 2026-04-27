@@ -35,6 +35,13 @@ public class DistrictRepository : IDistrictRepository
         return await _context.Districts
             .AnyAsync(d => d.Id == districtId && d.Boundaries.Contains(p));
     }
+    public async Task<bool> IsOverlappingOtherDistrictsAsync(Guid districtId, Polygon boundaries)
+    {
+        return await _context.Districts
+            .AsNoTracking()
+            .Where(d => d.Id != districtId && d.IsActive)
+            .AnyAsync(d => d.Boundaries.Relate(boundaries, "T********")); 
+    }
     public async Task<DistrictAnalytics> GetAnalyticsAsync(Guid districtId, CancellationToken ct = default)
     {
         var rawStats = await _context.Markers

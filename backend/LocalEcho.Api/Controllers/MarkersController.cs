@@ -39,7 +39,6 @@ public class MarkersController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id)
     {
-        // Пытаемся достать UserId, если юзер залогинен, чтобы показать его голос (UserVote)
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         Guid? userId = string.IsNullOrEmpty(userIdStr) ? null : Guid.Parse(userIdStr);
 
@@ -77,5 +76,16 @@ public class MarkersController : ControllerBase
     {
         await _service.DeleteMarkerAsync(id, GetUserId());
         return NoContent();
+    }
+    [HttpPost("{id:guid}/report")]
+    [Authorize] 
+    public async Task<IActionResult> Report(Guid id, [FromBody] CreateReportDto dto)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+        await _service.ReportMarkerAsync(id, dto, Guid.Parse(userIdStr));
+    
+        return Ok(new { success = true, message = "Ваша жалоба принята на рассмотрение модераторами." });
     }
 }

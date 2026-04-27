@@ -41,4 +41,15 @@ public class IdentityRepository : IIdentityRepository, ITokenRepository
 
     public async Task RemoveRefreshTokenAsync(ApplicationUser user) 
         => await _userManager.RemoveAuthenticationTokenAsync(user, "LocalEcho", "RefreshToken");
+    public async Task<bool> AddToRoleAsync(ApplicationUser user, string roleName)
+    {
+        var result = await _userManager.AddToRoleAsync(user, roleName);
+        return result.Succeeded;
+    }
+
+    public async Task<bool> RemoveFromRoleAsync(ApplicationUser user, string roleName)
+    {
+        var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+        return result.Succeeded;
+    }
 }

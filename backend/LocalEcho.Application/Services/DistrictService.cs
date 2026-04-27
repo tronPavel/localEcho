@@ -19,14 +19,12 @@ public class DistrictService : IDistrictService
         _unitOfWork = unitOfWork;
     }
 
-    // 1. Краткий список для регистрации и фильтров
     public async Task<IEnumerable<DistrictBriefDto>> GetListAsync()
     {
         var districts = await _repository.GetAllActiveAsync();
         return districts.Select(d => new DistrictBriefDto(d.Id, d.Name));
     }
 
-    // 2. Детальная информация для модалки района с аналитикой
     public async Task<DistrictDetailDto> GetDetailAsync(Guid id)
     {
         var district = await _repository.GetByIdAsync(id) 
@@ -49,20 +47,17 @@ public class DistrictService : IDistrictService
         return new DistrictDetailDto(district.Id, district.Name, district.Description, statsDto);
     }
 
-    // 3. Данные для отрисовки полигонов на карте
     public async Task<IEnumerable<DistrictMapDto>> GetForMapAsync()
     {
         var districts = await _repository.GetAllActiveAsync();
         return districts.Select(d => new DistrictMapDto(
             d.Id, 
             d.Name, 
-            // Превращаем координаты NTS в наш DTO [Y = Lat, X = Lng]
             d.Boundaries.Coordinates.Select(c => new CoordinateDto(c.Y, c.X)).ToList(),
             new CoordinateDto(d.Centroid.Y, d.Centroid.X)
         ));
     }
 
-    // 4. Определение района по точке (Reverse Geocoding)
     public async Task<DistrictBriefDto?> GetDistrictByCoordsAsync(double lat, double lng)
     {
         var point = _geometryFactory.CreatePoint(new Coordinate(lng, lat));
@@ -74,20 +69,18 @@ public class DistrictService : IDistrictService
         return new DistrictBriefDto(district.Id, district.Name);
     }
 
-    // --- ADMIN METHODS ---
 
     public async Task<Guid> CreateAsync(CreateDistrictDto dto)
     {
-        var coords = dto.Geometry.Select(c => new Coordinate(c.Lng, c.Lat)).ToList();
-        
-        // PostGIS/NTS требуют, чтобы полигон был замкнут (первая точка == последняя)
-        if (!coords.First().Equals2D(coords.Last())) 
-            coords.Add(new Coordinate(coords.First().X, coords.First().Y));
+        var polygon = MapToPolygon(dto.Geometry);
 
-        var polygon = _geometryFactory.CreatePolygon(coords.ToArray());
-        polygon.SRID = 4326;
+        if (await _repository.IsOverlappingOtherDistrictsAsync(Guid.Empty, polygon))
+        {
+            throw new InvalidOperationException("Границы нового района пересекаются с существующими.");
+        }
 
         var district = District.Create(dto.Name, polygon, dto.Description);
+        
         await _repository.AddAsync(district);
         await _unitOfWork.SaveChangesAsync();
         return district.Id;
@@ -96,19 +89,31 @@ public class DistrictService : IDistrictService
     public async Task UpdateAsync(Guid id, CreateDistrictDto dto)
     {
         var district = await _repository.GetByIdAsync(id) 
-                       ?? throw new KeyNotFoundException("Район для обновления не найден.");
-        
+                       ?? throw new KeyNotFoundException("Район не найден.");
+
+        var newPolygon = MapToPolygon(dto.Geometry);
+
+        if (await _repository.IsOverlappingOtherDistrictsAsync(id, newPolygon))
+        {
+            throw new InvalidOperationException("Обновленные границы накладываются на другой район.");
+        }
+
         district.Update(dto.Name, dto.Description, district.IsActive);
+        district.UpdateGeometry(newPolygon);
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private Polygon MapToPolygon(List<CoordinateDto> geometryDto)
+    {
+        var coords = geometryDto.Select(c => new Coordinate(c.Lng, c.Lat)).ToList();
         
-        var coords = dto.Geometry.Select(c => new Coordinate(c.Lng, c.Lat)).ToList();
-        if (!coords.First().Equals2D(coords.Last())) 
+        if (!coords.First().Equals2D(coords.Last()))
             coords.Add(new Coordinate(coords.First().X, coords.First().Y));
-        
+
         var polygon = _geometryFactory.CreatePolygon(coords.ToArray());
         polygon.SRID = 4326;
-        
-        district.UpdateGeometry(polygon);
-        await _unitOfWork.SaveChangesAsync();
+        return polygon;
     }
 
     public async Task DeleteAsync(Guid id)
@@ -116,9 +121,8 @@ public class DistrictService : IDistrictService
         var district = await _repository.GetByIdAsync(id) 
                        ?? throw new KeyNotFoundException("Район не найден.");
         
-        // В нашем случае используем деактивацию вместо физического удаления, 
-        // чтобы не "сломать" созданные ранее в этом районе метки.
         district.SetActive(false);
         await _unitOfWork.SaveChangesAsync();
     }
+    
 }

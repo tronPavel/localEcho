@@ -23,12 +23,15 @@ public static class SeedData
         var geoFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
 
         await context.Database.MigrateAsync();
+        
+        // 1. Очистка старых аватарок/загрузок при запуске сидов (по желанию)
+        var imgMap = PrepareImages(env);
 
-        var imagesMap = PrepareImages(env);
-
+        // 2. Генерация
         var districts = await SeedDistricts(context, geoFactory);
-        var users = await SeedUsers(userManager, roleManager, districts, imagesMap);
-        await SeedMarkers(context, geoFactory, users, districts, imagesMap);
+        var users = await SeedUsers(userManager, roleManager, districts, imgMap);
+        await SeedMarkers(context, geoFactory, users, districts, imgMap);
+        await SeedReports(context, users);
     }
 
     private static Dictionary<string, string> PrepareImages(IWebHostEnvironment env)
@@ -58,37 +61,33 @@ public static class SeedData
 
         return result;
     }
-    private static async Task<List<District>> SeedDistricts(AppDbContext context, GeometryFactory geoFactory)
-    {
-        if (await context.Districts.AnyAsync()) return await context.Districts.ToListAsync();
+   private static async Task<List<District>> SeedDistricts(AppDbContext context, GeometryFactory geoFactory)
+{
+    // Чтобы сиды сработали, в базе не должно быть районов. 
+    // Если они есть, но вы хотите добавить новые - закомментируйте 'ifAny' или почистите таблицу Districts.
+    if (await context.Districts.AnyAsync()) return await context.Districts.ToListAsync();
 
-        Polygon CreateMinskPoly(double[,] coords)
-        {
-            var shell = new Coordinate[coords.GetLength(0)];
-            for (int i = 0; i < coords.GetLength(0); i++)
-                shell[i] = new Coordinate(coords[i, 1], coords[i, 0]);
-            return geoFactory.CreatePolygon(shell);
-        }
-
-        var districts = new List<District>
-        {
-            District.Create("Осмоловка", CreateMinskPoly(new double[,] {
-                {53.913, 27.556}, {53.916, 27.558}, {53.914, 27.568}, {53.911, 27.566}, {53.913, 27.556}
-            }), "Исторический центр, культурное наследие"),
-
-            District.Create("Маяк Минска", CreateMinskPoly(new double[,] {
-                {53.936, 27.648}, {53.938, 27.662}, {53.927, 27.665}, {53.926, 27.648}, {53.936, 27.648}
-            }), "Современный ЖК возле Национальной библиотеки"),
-
-            District.Create("Грушевка", CreateMinskPoly(new double[,] {
-                {53.889, 27.514}, {53.894, 27.525}, {53.882, 27.531}, {53.877, 27.521}, {53.889, 27.514}
-            }), "Динамично развивающийся высотный квартал")
-        };
-
-        context.Districts.AddRange(districts);
-        await context.SaveChangesAsync();
-        return districts;
+    Polygon CreatePoly(double[,] c) {
+        var shell = new Coordinate[c.GetLength(0)];
+        for (int i = 0; i < c.GetLength(0); i++) shell[i] = new Coordinate(c[i, 1], c[i, 0]);
+        return geoFactory.CreatePolygon(shell);
     }
+
+    var list = new List<District> {
+        District.Create("Осмоловка", CreatePoly(new[,] {{53.913, 27.556}, {53.916, 27.558}, {53.914, 27.568}, {53.911, 27.566}, {53.913, 27.556}}), "Центр города"),
+        District.Create("Маяк Минска", CreatePoly(new[,] {{53.936, 27.648}, {53.938, 27.662}, {53.927, 27.665}, {53.926, 27.648}, {53.936, 27.648}}), "Восток"),
+        District.Create("Грушевка", CreatePoly(new[,] {{53.889, 27.514}, {53.894, 27.525}, {53.882, 27.531}, {53.877, 27.521}, {53.889, 27.514}}), "Юго-Запад"),
+        District.Create("Курасовщина", CreatePoly(new[,] {{53.855, 27.510}, {53.860, 27.535}, {53.845, 27.535}, {53.840, 27.510}, {53.855, 27.510}}), "Парк Курасовщина"),
+        District.Create("Лошица", CreatePoly(new[,] {{53.855, 27.575}, {53.860, 27.595}, {53.845, 27.600}, {53.840, 27.580}, {53.855, 27.575}}), "Жилой массив и усадьба"),
+        District.Create("Зеленый Луг", CreatePoly(new[,] {{53.955, 27.620}, {53.955, 27.640}, {53.935, 27.645}, {53.935, 27.625}, {53.955, 27.620}}), "Природа и водоемы"),
+        District.Create("Каменная Горка", CreatePoly(new[,] {{53.918, 27.420}, {53.918, 27.460}, {53.905, 27.460}, {53.905, 27.420}, {53.918, 27.420}}), "Минское гетто (активное)"),
+        District.Create("Серебрянка", CreatePoly(new[,] {{53.870, 27.595}, {53.875, 27.615}, {53.855, 27.625}, {53.850, 27.605}, {53.870, 27.595}}), "У канала Слепянской системы")
+    };
+
+    context.Districts.AddRange(list);
+    await context.SaveChangesAsync();
+    return list;
+}
     private static async Task<List<ApplicationUser>> SeedUsers(
         UserManager<ApplicationUser> userManager, 
         RoleManager<ApplicationRole> roleManager, 
@@ -130,113 +129,78 @@ public static class SeedData
         await um.AddToRoleAsync(user, role);
         return user;
     }
-    private static async Task SeedMarkers(
-        AppDbContext context, 
-        GeometryFactory geoFactory, 
-        List<ApplicationUser> users, 
-        List<District> districts,
-        Dictionary<string, string> imgMap)
+  private static async Task SeedMarkers(AppDbContext context, GeometryFactory geoFactory, List<ApplicationUser> users, List<District> districts, Dictionary<string, string> imgMap)
     {
         if (await context.Markers.AnyAsync()) return;
         var rand = new Random();
-        
-        // Список доступных ключей для картинок меток
         var imgKeys = imgMap.Keys.Where(k => k.StartsWith("img")).ToList();
-        var officialUser = users.First(u => u.UserName == "zhes24@echo.by");
+        
+        var staffAccounts = users.Where(u => u.Email.Contains("echo") || u.Email.Contains("zhes")).ToList();
+        var citizens = users.Where(u => !staffAccounts.Contains(u)).ToList();
 
-        for (int i = 0; i < 60; i++)
+        for (int i = 0; i < 110; i++)
         {
             var district = districts[rand.Next(districts.Count)];
-            var author = users[rand.Next(users.Count)];
-            var category = (MarkerCategory)rand.Next(0, 5); // От Issue до Project
+            var category = (MarkerCategory)rand.Next(0, 5); 
+            var author = (category == MarkerCategory.Project) ? staffAccounts[rand.Next(staffAccounts.Count)] : citizens[rand.Next(citizens.Count)];
 
-            // 1. ГЕНЕРАЦИЯ ГЕОМЕТРИИ (15% шанса на ПОЛИГОН для тестирования Official/Admin)
+            // Геометрия
             Geometry location;
             var center = district.Centroid;
-            
-            if (rand.Next(1, 100) > 85 && (author.UserName.Contains("admin") || author.UserName.Contains("zhes")))
+            if ((category == MarkerCategory.Project || category == MarkerCategory.Issue) && rand.NextDouble() > 0.8)
             {
-                // Рисуем квадратную "Зону работ" вокруг центра района
-                double offset = 0.002;
+                // ПОЛИГОНАЛЬНАЯ МЕТКА
+                double s = 0.003;
                 location = geoFactory.CreatePolygon(new[] {
-                    new Coordinate(center.X - offset, center.Y - offset),
-                    new Coordinate(center.X + offset, center.Y - offset),
-                    new Coordinate(center.X + offset, center.Y + offset),
-                    new Coordinate(center.X - offset, center.Y + offset),
-                    new Coordinate(center.X - offset, center.Y - offset)
+                    new Coordinate(center.X - s, center.Y - s), new Coordinate(center.X + s, center.Y - s),
+                    new Coordinate(center.X + s, center.Y + s), new Coordinate(center.X - s, center.Y + s),
+                    new Coordinate(center.X - s, center.Y - s)
                 });
             }
             else
             {
-                // Обычная точка со случайным смещением от центра района
-                double shiftX = (rand.NextDouble() - 0.5) * 0.01;
-                double shiftY = (rand.NextDouble() - 0.5) * 0.01;
-                location = geoFactory.CreatePoint(new Coordinate(center.X + shiftX, center.Y + shiftY));
+                // ТОЧЕЧНАЯ МЕТКА
+                location = geoFactory.CreatePoint(new Coordinate(center.X + (rand.NextDouble() - 0.5) * 0.015, center.Y + (rand.NextDouble() - 0.5) * 0.015));
             }
             location.SRID = 4326;
 
-            // 2. ДАТЫ ДЛЯ ЭВЕНТОВ (Будущие и прошлые)
-            DateTime? schedDate = null;
-            if (category == MarkerCategory.Event)
-            {
-                schedDate = rand.NextDouble() > 0.3 
-                    ? DateTime.UtcNow.AddDays(rand.Next(1, 10))  // Будущее (Upcoming)
-                    : DateTime.UtcNow.AddDays(rand.Next(-5, -1)); // Прошлое (Passed)
-            }
-
-            // 3. СОЗДАНИЕ МАРКЕРА
             var marker = Marker.Create(
-                title: GetTitle(category, i),
-                location: location,
-                category: category,
-                createdByUserId: author.Id,
-                districtId: rand.NextDouble() > 0.1 ? district.Id : null, // 10% шанс создать "вне района"
-                description: "Тестовое описание для проверки интерфейса и отображения текста. Включает детали происшествия и требования по исправлению.",
-                scheduledAt: schedDate
+                title: GetTitle(category, i), location: location, category: category,
+                createdByUserId: author.Id, districtId: district.Id,
+                description: "Здесь могло быть ваше подробное описание инцидента. Тестовые данные для анализа просторности интерфейса.",
+                scheduledAt: category == MarkerCategory.Event ? DateTime.UtcNow.AddDays(rand.Next(-5, 10)) : null
             );
 
-            // РЕЙТИНГ (случайный для тестов лидерборда)
-            marker.UpdateRating(rand.Next(-5, 45));
+            marker.UpdateRating(rand.Next(-2, 35));
 
-            // 4. ДОБАВЛЕНИЕ КАРТИНОК (0, 1 или 3 фото)
-            int picRoll = rand.Next(0, 100);
-            int count = picRoll < 30 ? 0 : (picRoll < 70 ? 1 : 3);
-            
-            for (int j = 0; j < count; j++)
-            {
-                var key = imgKeys[rand.Next(imgKeys.Count)];
-                marker.Images.Add(MarkerImage.ForMarker(imgMap[key], marker.Id));
-            }
-
-            // 5. РЕЗОЛЮЦИИ (ОФИЦИАЛЬНЫЕ ОТВЕТЫ)
-            // Создаем ответы для некоторых Issues и Suggestions
-            if ((category == MarkerCategory.Issue || category == MarkerCategory.Suggestion) && rand.NextDouble() > 0.6)
-            {
-                var resolution = new MarkerResolution(
-                    marker.Id, 
-                    officialUser.Id, 
-                    "Городские службы провели проверку. Проблема устранена / Предложение принято к реализации."
-                );
-
-                // В ответ (Resolution) всегда добавляем фото "ПОСЛЕ" (img6)
-                if (imgMap.ContainsKey("img6"))
-                {
-                    resolution.Images.Add(MarkerImage.ForResolution(imgMap["img6"], resolution.Id));
-                }
-
-                marker.SetResolution(resolution);
-                context.MarkerResolutions.Add(resolution);
-            }
-
-            // РУЧНАЯ КОРРЕКТИРОВКА СТАТУСА (для разнообразия)
-            if (category == MarkerCategory.Issue && marker.Status != MarkerStatus.Resolved && rand.NextDouble() > 0.5)
-            {
-                marker.ChangeStatus(MarkerStatus.InProgress);
-            }
+            // Картинки (ДО)
+            int imgCount = rand.Next(0, 4);
+            for (int j = 0; j < imgCount; j++)
+                marker.Images.Add(MarkerImage.ForMarker(imgMap[imgKeys[rand.Next(imgKeys.Count)]], marker.Id));
 
             context.Markers.Add(marker);
-        }
 
+            // РЕЗОЛЮЦИИ (ХРОНОЛОГИЯ 1:N)
+            if ((category == MarkerCategory.Issue || category == MarkerCategory.Suggestion) && rand.NextDouble() > 0.4)
+            {
+                var staff = staffAccounts[rand.Next(staffAccounts.Count)];
+                
+                // Первое сообщение: Принято
+                var res1 = new MarkerResolution(marker.Id, staff.Id, "Информация принята. Ответственный специалист назначен.");
+                context.MarkerResolutions.Add(res1);
+                marker.AddResolution(res1);
+
+                // Если шанс выше: Второе сообщение: Результат
+                if (rand.NextDouble() > 0.5)
+                {
+                    var res2 = new MarkerResolution(marker.Id, staff.Id, "Работы выполнены в полном объеме. Посмотрите фото-отчет ниже.");
+                    res2.Images.Add(MarkerImage.ForResolution(imgMap["img6"], res2.Id));
+                    context.MarkerResolutions.Add(res2);
+                    marker.AddResolution(res2);
+                    marker.ChangeStatus(MarkerStatus.Resolved);
+                }
+            }
+        }
         await context.SaveChangesAsync();
     }
 
@@ -248,4 +212,24 @@ public static class SeedData
         MarkerCategory.Suggestion => $"Предложение по району №{i}",
         _ => $"Официальный проект застройки №{i}"
     };
+    public static async Task SeedReports(AppDbContext context, List<ApplicationUser> users)
+    {
+        if (await context.Reports.AnyAsync()) return;
+        var rand = new Random();
+        var allMarkers = await context.Markers.Take(40).ToListAsync();
+        var citizens = users.Where(u => u.Email.Contains("test.by")).ToList();
+
+        foreach (var marker in allMarkers.OrderBy(x => rand.Next()).Take(15))
+        {
+            int reportCount = rand.Next(1, 4); 
+            for (int i = 0; i < reportCount; i++)
+            {
+                var reporter = citizens[rand.Next(citizens.Count)];
+                var reason = (ReportReason)rand.Next(0, 4);
+                var report = new Report(marker.Id, reporter.Id, reason, "Текст жалобы: Содержимое метки нарушает правила или является недостоверным.");
+                context.Reports.Add(report);
+            }
+        }
+        await context.SaveChangesAsync();
+    }
 }

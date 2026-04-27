@@ -12,12 +12,10 @@ namespace LocalEcho.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
-    private readonly IFileService _fileService;
 
-    public UsersController(IUserService userService, IFileService fileService)
+    public UsersController(IUserService userService)
     {
         _userService = userService;
-        _fileService = fileService;
     }
 
     private Guid GetCurrentUserId()
@@ -35,7 +33,7 @@ public class UsersController : ControllerBase
 
     [HttpPut("profile")]
     [Authorize]
-    public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto) // [FromForm]!
+    public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)
     {
         var userId = GetCurrentUserId();
         await _userService.UpdateProfileAsync(userId, dto);

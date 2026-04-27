@@ -12,19 +12,19 @@ public class DistrictsController : ControllerBase
 
     public DistrictsController(IDistrictService service) => _service = service;
 
-    [HttpGet] // Краткий список для Select-ов
+    [HttpGet] 
     public async Task<IActionResult> GetList() 
         => Ok(await _service.GetListAsync());
 
-    [HttpGet("map")] // Данные для отрисовки слоев на карте
+    [HttpGet("map")] 
     public async Task<IActionResult> GetForMap() 
         => Ok(await _service.GetForMapAsync());
 
-    [HttpGet("{id:guid}/details")] // Статистика для модалки района
+    [HttpGet("{id:guid}/details")] 
     public async Task<IActionResult> GetDetails(Guid id) 
         => Ok(await _service.GetDetailAsync(id));
 
-    [HttpGet("find")] // Reverse geocoding (где я нахожусь?)
+    [HttpGet("find")] 
     public async Task<IActionResult> FindByCoords([FromQuery] double lat, [FromQuery] double lng)
     {
         var district = await _service.GetDistrictByCoordsAsync(lat, lng);

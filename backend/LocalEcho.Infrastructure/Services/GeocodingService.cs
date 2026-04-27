@@ -26,7 +26,7 @@ public class GeocodingService : IGeocodingService
 
         try
         {
-            var url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(address)}&format=json&limit=1";
+            var url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(address)}&format=json&limit=1&countrycodes=by";
             
             var results = await _httpClient.GetFromJsonAsync<List<NominatimResponse>>(url);
 

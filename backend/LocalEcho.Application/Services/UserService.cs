@@ -122,5 +122,34 @@ public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
             user.HomeLocation = null;
         }
     }
+    
+    public async Task AssignRoleAsync(Guid userId, string roleName)
+    {
+        var user = await _userRepository.GetByIdAsync(userId) 
+                   ?? throw new KeyNotFoundException("Пользователь не найден");
+
+        var allowedRoles = new[] { "Moderator", "Official", "User" };
+        if (!allowedRoles.Contains(roleName)) throw new BadRequestException("Недопустимая роль");
+
+        await _identityRepository.AddToRoleAsync(user, roleName);
+    }
+
+    public async Task RemoveRoleAsync(Guid userId, string roleName)
+    {
+        var user = await _userRepository.GetByIdAsync(userId) ?? throw new KeyNotFoundException();
+        await _identityRepository.RemoveFromRoleAsync(user, roleName);
+    }
+
+    public async Task<IEnumerable<UserProfileDto>> SearchUsersAsync(string query)
+    {
+        var users = await _userRepository.SearchAsync(query, 20);
+    
+        var results = new List<UserProfileDto>();
+        foreach (var user in users)
+        {
+            results.Add(await GetProfileAsync(user.Id));
+        }
+        return results;
+    }
 }
 

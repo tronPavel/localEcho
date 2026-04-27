@@ -12,7 +12,6 @@ public class MarkerImage
 
     public MarkerImage(string url, Guid? markerId = null, Guid? resolutionId = null)
     {
-        Id = Guid.NewGuid();
         Url = url;
         MarkerId = markerId;
         MarkerResolutionId = resolutionId;

@@ -2,7 +2,6 @@ using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using LocalEcho.Core.Entities;
 using LocalEcho.Core.Interfaces;
-using LocalEcho.Core.Models;
 using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Application.Services;
@@ -16,6 +15,7 @@ public class MarkerService : IMarkerService
     private readonly IFileService _fileService;
     private readonly IIdentityRepository _identityRepository;
     private readonly IDistrictRepository _districtRepository;
+    private readonly IReportRepository _reportRepository;
     
 
     public MarkerService(
@@ -25,7 +25,9 @@ public class MarkerService : IMarkerService
         GeometryFactory geometryFactory,
         IFileService fileService,
         IIdentityRepository identityRepository,
-        IDistrictRepository districtRepository)
+        IDistrictRepository districtRepository, 
+        IReportRepository reportRepository
+    )
     {
         _markerRepository = markerRepository;
         _userRepository = userRepository;
@@ -34,6 +36,7 @@ public class MarkerService : IMarkerService
         _fileService = fileService;
         _identityRepository = identityRepository;
         _districtRepository = districtRepository;
+        _reportRepository = reportRepository;
     }
 
 public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
@@ -45,7 +48,7 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
     var roles = await _identityRepository.GetRolesAsync(user!);
     bool isStaff = roles.Any(r => r is "Admin" or "Official");
 
-    // 1. Собираем геометрию
+    
     Geometry location;
     if (dto.Points.Count == 1) 
     {
@@ -60,18 +63,14 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
     }
     location.SRID = 4326;
 
-    // 2. ГЕО-АВТОМАТИКА: Находим район по координатам (или null)
     Guid? autoDistrictId = null;
     var searchPoint = location is Point p ? p : location.Centroid;
     
-    // Вызываем репозиторий: "В какой полигон входит эта точка?"
     var district = await _districtRepository.GetDistrictByCoordinatesAsync(searchPoint);
     if (district != null) autoDistrictId = district.Id;
 
-    // 3. Создаем маркер (autoDistrictId может быть null)
     var marker = Marker.Create(dto.Title, location, dto.Category, userId, autoDistrictId, dto.Description, dto.ScheduledAt);
 
-    // 4. Фото (как и было)
     if (dto.ImageFiles != null && dto.ImageFiles.Any())
     {
         foreach (var file in dto.ImageFiles)
@@ -100,52 +99,19 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
             Category = category, Status = status, MinLat = queryParams.MinLat, MaxLat = queryParams.MaxLat, MinLng = queryParams.MinLng, MaxLng = queryParams.MaxLng, Limit = queryParams.Limit 
         };
 
-        var markers = await _markerRepository.GetForMapAsync(filter); // фильтр по BoundingBox
+        var markers = await _markerRepository.GetForMapAsync(filter); 
 
         return markers.Select(m => new MarkerMapDto(
             m.Id,
             m.Title,
             m.Category,
             m.Status,
-            m.Location.GeometryType, // "Point", "Polygon" или "LineString"
+            m.Location.GeometryType, 
             m.Location.Coordinates.Select(c => new CoordinateDto(c.Y, c.X)).ToList(),
-            new CoordinateDto(m.Location.Centroid.Y, m.Location.Centroid.X) // Всегда возвращаем точку-центр
+            new CoordinateDto(m.Location.Centroid.Y, m.Location.Centroid.X) 
         ));
     }
-
-    public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
-    {
-        var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
-                     ?? throw new KeyNotFoundException("Метка не найдена."); 
-        
-        MarkerResolutionDto? resolutionDto = null;
-        if (detail.Marker.Resolution != null)
-        {
-            resolutionDto = new MarkerResolutionDto(
-                detail.Marker.Resolution.Comment,
-                detail.Marker.Resolution.ResolvedByUser?.Name ?? "Сотрудник службы", 
-                detail.Marker.Resolution.CreatedAt,
-                detail.Marker.Resolution.Images.Select(img => img.Url).ToList()
-            );
-        }
-
-        return new MarkerDetailDto(
-            detail.Marker.Id,
-            detail.Marker.Title,
-            detail.Marker.Description,
-            detail.Marker.Images.Select(i => i.Url).ToList(),
-            detail.Marker.Category,
-            detail.Marker.Status,
-            detail.Marker.CreatedByUserId,
-            detail.Creator?.Name ?? "Аноним",
-            detail.Creator?.AvatarUrl,
-            detail.Marker.Rating,
-            detail.UserVote,
-            detail.Marker.CreatedAt,
-            detail.Marker.UpdatedAt,
-            resolutionDto
-        );
-    }
+    
     
     public async Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId)
     {
@@ -233,7 +199,41 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
         await _unitOfWork.SaveChangesAsync();
     }
 
-  public async Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId)
+public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
+{
+    var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
+                 ?? throw new KeyNotFoundException("Метка не найдена."); 
+
+    var resolutionDtos = detail.Marker.Resolutions
+        .OrderByDescending(r => r.CreatedAt) 
+        .Select(r => new MarkerResolutionDto(
+            r.Comment,
+            r.ResolvedByUser?.Name ?? "Сотрудник службы", 
+            r.CreatedAt,
+            r.Images.Select(img => img.Url).ToList()
+        )).ToList();
+
+    return new MarkerDetailDto(
+        detail.Marker.Id,
+        detail.Marker.Title,
+        detail.Marker.Description,
+        detail.Marker.Images.Select(i => i.Url).ToList(),
+        detail.Marker.Category,
+        detail.Marker.Status,
+        detail.Marker.CreatedByUserId,
+        detail.Creator?.Name ?? "Аноним",
+        detail.Creator?.AvatarUrl,
+        detail.Marker.Rating,
+        detail.UserVote,
+        detail.Marker.CreatedAt,
+        detail.Marker.UpdatedAt,
+        detail.Marker.ScheduledAt,
+        detail.Marker.ExpiresAt,
+        resolutionDtos
+    );
+}
+
+public async Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId)
 {
     var marker = await _markerRepository.GetByIdAsync(id) 
                  ?? throw new KeyNotFoundException("Метка не найдена.");
@@ -244,70 +244,108 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
     bool isStaff = roles.Any(r => r is "Admin" or "Official");
     bool isAuthor = marker.CreatedByUserId == userId;
 
-    // ВАЛИДАЦИЯ ПРАВ (БИЗНЕС-ПРАВИЛА)
-    // 1. Статус "Resolved/Accepted/Rejected" - только стафф (УК/Админ)
-    var finalStatuses = new[] { MarkerStatus.Resolved, MarkerStatus.Accepted, MarkerStatus.Rejected };
-    if (finalStatuses.Contains(dto.NewStatus) && !isStaff)
-        throw new UnauthorizedAccessException("Только официальные лица могут подтверждать решение задач.");
+    ValidateStatusTransition(marker.Category, marker.Status, dto.NewStatus, isStaff, isAuthor);
 
-    // 2. Обычный пользователь может менять статус только у СВОИХ объявлений или событий (например, отменить)
-    if (!isAuthor && !isStaff)
-        throw new UnauthorizedAccessException("Нет прав доступа.");
-
-    // 3. ПЕРЕХОД К СОЗДАНИЮ RESOLUTION
-    if (dto.NewStatus == MarkerStatus.Resolved || dto.NewStatus == MarkerStatus.Accepted)
+    if (isStaff && (!string.IsNullOrWhiteSpace(dto.Comment) || (dto.ImageFiles?.Count > 0)))
     {
-        // Создаем резолюцию
-        var resolution = new MarkerResolution(id, userId, dto.Comment ?? "Выполнено официальной службой.");
+        var resolution = new MarkerResolution(id, userId, dto.Comment ?? "Статус изменен.");
 
-        // Сохраняем фото "После" (те самые ImageFiles из ChangeStatusDto)
-        if (dto.ImageFiles != null && dto.ImageFiles.Any())
+        if (dto.ImageFiles != null)
         {
             foreach (var file in dto.ImageFiles)
             {
                 using var stream = file.OpenReadStream();
                 var url = await _fileService.SaveFileAsync(stream, file.FileName, "uploads");
-                resolution.Images.Add(MarkerImage.ForResolution(url, resolution.Id));
+                
+                resolution.Images.Add(new MarkerImage(url)); 
             }
         }
-
-        // Применяем решение к маркеру
-        marker.SetResolution(resolution);
-    }
-    else
-    {
-        // Просто смена статуса (InProgress, Archived и т.д.)
-        marker.ChangeStatus(dto.NewStatus);
+        
+        marker.AddResolution(resolution); 
     }
 
+    marker.ChangeStatus(dto.NewStatus);
+    
     await _unitOfWork.SaveChangesAsync();
 }
+
+public async Task DeleteMarkerAsync(Guid id, Guid userId)
+{
+    var marker = await _markerRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException();
     
+    var user = await _userRepository.GetByIdAsync(userId);
+    var roles = await _identityRepository.GetRolesAsync(user!);
+    
+    if (marker.CreatedByUserId != userId && !roles.Any(r => r is "Admin" or "Moderator"))
+        throw new UnauthorizedAccessException();
 
-    public async Task DeleteMarkerAsync(Guid id, Guid userId)
+    var fileUrls = marker.Images.Select(i => i.Url).ToList();
+    var resolutionFiles = marker.Resolutions.SelectMany(r => r.Images).Select(i => i.Url);
+    fileUrls.AddRange(resolutionFiles);
+
+    await _markerRepository.DeleteAsync(marker);
+    await _unitOfWork.SaveChangesAsync();
+
+    foreach (var url in fileUrls) await _fileService.DeleteFileAsync(url);
+}
+private void ValidateStatusTransition(MarkerCategory category, MarkerStatus current, MarkerStatus next, bool isStaff, bool isAuthor)
+{
+    if (!isStaff && !isAuthor) 
+        throw new UnauthorizedAccessException("Forbidden");
+
+    var restrictedForUsers = new[] { 
+        MarkerStatus.Resolved, MarkerStatus.Accepted, MarkerStatus.Rejected, 
+        MarkerStatus.Review, MarkerStatus.Ongoing, MarkerStatus.Passed 
+    };
+
+    if (restrictedForUsers.Contains(next) && !isStaff)
+        throw new UnauthorizedAccessException("ForbiddenRole");
+
+    switch (category)
     {
-        var marker = await _markerRepository.GetByIdAsync(id) 
-                     ?? throw new KeyNotFoundException("Метка не найдена.");
+        case MarkerCategory.Issue:
+            var issueValid = new[] { MarkerStatus.Active, MarkerStatus.InProgress, MarkerStatus.Resolved };
+            if (!issueValid.Contains(next)) throw new InvalidOperationException("InvalidStatusForIssue");
+            break;
 
-        var user = await _userRepository.GetByIdAsync(userId);
-        var roles = await _identityRepository.GetRolesAsync(user!);
+        case MarkerCategory.Event:
+            var eventValid = new[] { MarkerStatus.Upcoming, MarkerStatus.Ongoing, MarkerStatus.Passed, MarkerStatus.Archived };
+            if (!eventValid.Contains(next)) throw new InvalidOperationException("InvalidStatusForEvent");
+            break;
 
-        bool isStaff = roles.Any(r => r == "Admin" || r == "Moderator");
-        if (marker.CreatedByUserId != userId && !isStaff)
-            throw new UnauthorizedAccessException("Нет прав для удаления.");
+        case MarkerCategory.Announcement:
+            var announceValid = new[] { MarkerStatus.Current, MarkerStatus.Archived };
+            if (!announceValid.Contains(next)) throw new InvalidOperationException("InvalidStatusForAnnounce");
+            break;
 
-        var fileUrls = marker.Images.Select(i => i.Url).ToList();
-        if (marker.Resolution != null)
-        {
-            fileUrls.AddRange(marker.Resolution.Images.Select(i => i.Url));
-        }
-
-        await _markerRepository.DeleteAsync(marker);
-        await _unitOfWork.SaveChangesAsync();
-
-        foreach (var url in fileUrls)
-        {
-            await _fileService.DeleteFileAsync(url);
-        }
+        case MarkerCategory.Suggestion:
+            var suggestValid = new[] { MarkerStatus.Review, MarkerStatus.Accepted, MarkerStatus.Rejected };
+            if (!suggestValid.Contains(next)) throw new InvalidOperationException("InvalidStatusForSuggestion");
+            break;
+            
+        case MarkerCategory.Project:
+            if (next == MarkerStatus.Review || next == MarkerStatus.Accepted) 
+                throw new InvalidOperationException("InvalidStatusForProject");
+            break;
     }
+}
+
+public async Task ReportMarkerAsync(Guid markerId, CreateReportDto dto, Guid reporterId)
+{
+    var marker = await _markerRepository.GetByIdAsync(markerId) 
+                 ?? throw new KeyNotFoundException("Метка не найдена.");
+
+    var report = new Report(markerId, reporterId, dto.Reason, dto.Comment);
+    await _reportRepository.AddAsync(report);
+    await _unitOfWork.SaveChangesAsync(); 
+
+    var currentActiveReports = await _reportRepository.GetActiveCountForMarkerAsync(markerId);
+    
+    if (currentActiveReports >= 5 && !marker.IsHidden)
+    {
+        marker.Hide();
+        await _unitOfWork.SaveChangesAsync();
+    }
+}
+
 }

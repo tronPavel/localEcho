@@ -8,7 +8,6 @@ public class Marker
     public Guid Id { get; private set; }
     public string Title { get; private set; } = null!;
     
-    //public Point Location { get; private set; } = null!;
     public Geometry Location { get; private set; } = null!; 
     public string? Description { get; private set; }
     public MarkerCategory Category { get; private set; }
@@ -22,9 +21,21 @@ public class Marker
     public int Rating { get; private set; } = 0;
     
     public virtual ICollection<MarkerImage> Images { get; private set; } = new List<MarkerImage>();
-    public virtual MarkerResolution? Resolution { get; private set; }
-    
+    public virtual ICollection<MarkerResolution> Resolutions { get; private set; } = new List<MarkerResolution>();
     public ApplicationUser? Creator { get; private set; }
+    public bool IsHidden { get; private set; } = false;
+
+    public void Hide() 
+    {
+        IsHidden = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        IsHidden = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     private Marker() { }
 
@@ -36,7 +47,7 @@ public class Marker
         Category = category;
         CreatedByUserId = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("Creator required");
         DistrictId = districtId;
-        Description = description?.Length > 500 ? throw new ArgumentException("Description too long") : description?.Trim();
+        Description = description?.Length > 2000 ? throw new ArgumentException("Description too long") : description?.Trim();
         CreatedAt = DateTime.UtcNow;
         Rating = 0;
         ScheduledAt = scheduledAt;
@@ -50,14 +61,13 @@ public class Marker
         
         if (category == MarkerCategory.Announcement)
         {
-            ExpiresAt = CreatedAt.AddDays(30);//срок жизни вынести либо сделат настраемым
+            ExpiresAt = CreatedAt.AddDays(30);
         }
     }
 
     public static Marker Create(string title, Geometry location, MarkerCategory category, 
         Guid createdByUserId, Guid? districtId, string? description = null, DateTime? scheduledAt = null)
     {
-        // Валидация
         if (category == MarkerCategory.Event && !scheduledAt.HasValue)
             throw new ArgumentException("Для события необходимо указать дату и время.");
 
@@ -87,12 +97,9 @@ public class Marker
     
     public void UpdateRating(int newRating) => Rating = newRating;
     
-    public void SetResolution(MarkerResolution resolution)
+    public void AddResolution(MarkerResolution resolution)
     {
-        if (Status == MarkerStatus.Resolved) 
-            throw new InvalidOperationException("Метка уже имеет решение.");
-            
-        Resolution = resolution;
-        ChangeStatus(MarkerStatus.Resolved);
+        Resolutions.Add(resolution);
+        UpdatedAt = DateTime.UtcNow;
     }
 }

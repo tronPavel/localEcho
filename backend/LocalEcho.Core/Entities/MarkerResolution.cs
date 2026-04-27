@@ -18,7 +18,6 @@ public class MarkerResolution
 
     public MarkerResolution(Guid markerId, Guid resolvedByUserId, string comment)
     {
-        Id = Guid.NewGuid();
         MarkerId = markerId;
         ResolvedByUserId = resolvedByUserId;
         Comment = comment.Trim();
