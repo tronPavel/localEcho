@@ -6,7 +6,6 @@ import styles from './StatusFilters.module.css';
 export const StatusFilters = () => {
     const { category, status, setStatus } = useFilterStore();
 
-    // Если категория не выбрана, список статусов не имеет смысла
     if (!category) return null;
 
     const availableStatuses = CATEGORY_STATUSES[category as keyof typeof CATEGORY_STATUSES] || [];

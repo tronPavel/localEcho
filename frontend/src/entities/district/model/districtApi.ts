@@ -8,8 +8,10 @@ import type { Coordinate } from "@/entities/marker";
 
 export const districtApi = {
 
-    getList: async (): Promise<DistrictBriefDto[]> => {
-        const response = await api.get('/districts');
+    getList: async (cityId?: string): Promise<DistrictBriefDto[]> => {
+        const response = await api.get('/districts', {
+            params: { cityId }
+        });
         return response.data;
     },
 

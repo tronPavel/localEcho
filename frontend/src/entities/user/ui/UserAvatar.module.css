@@ -55,15 +55,14 @@
     padding: 1px;
 }
 .wrapper {
-    position: relative; /* Контекст для абсолютного позиционирования галочки */
+    position: relative;
     display: inline-flex;
     flex-shrink: 0;
 }
 
-/* Стили галочки */
 .verifiedBadgeWrapper {
     position: absolute;
-    bottom: -2px; /* Чуть-чуть за край аватара */
+    bottom: -2px;
     right: -2px;
     z-index: 2;
     background: white;
@@ -76,9 +75,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Опционально: можно добавить тонкий золотой бордер для аватаров админов */
 .officialBorder {
     box-shadow: 0 0 0 2px var(--color-accent-yellow);
 }
 
-/* Остальные стили аватара из предыдущих ответов остаются без изменений */

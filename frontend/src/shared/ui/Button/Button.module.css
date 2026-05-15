@@ -1,16 +1,21 @@
 .button {
-    margin: 10px;
-    padding: 14px 28px;
+    box-sizing: border-box;
+
+    margin: 4px;
+    padding: 12px 24px;
     border-radius: var(--radius-md);
     font-weight: 700;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
-    transition: var(--transition-smooth);
-    border: none;
+    transition: all var(--transition-fast);
+
+    border: 2px solid transparent;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
+    height: 48px;
 }
 
 .primary {
@@ -33,4 +38,17 @@
     background-color: transparent;
     border: 2px solid var(--color-primary);
     color: var(--color-primary);
+}
+.button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

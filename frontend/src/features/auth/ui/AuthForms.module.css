@@ -25,7 +25,6 @@
     margin-left: 4px;
 }
 
-/* Сетка для регистрации */
 .registerGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -45,12 +44,12 @@
 
 .districtContainer {
     display: flex;
-    align-items: flex-end; /* Кнопка по линии инпута */
+    align-items: flex-end;
     gap: 8px;
 }
 
 .locateBtn {
-    height: 58px; /* Совпадает с высотой нашего большого инпута */
+    height: 58px;
     width: 60px;
     padding: 0;
     font-size: 20px;
@@ -72,7 +71,6 @@
         gap: 20px;
     }
 }
-/* Если мобилка - в одну колонку */
 @media (max-width: 600px) {
     .registerGrid { grid-template-columns: 1fr; }
 }

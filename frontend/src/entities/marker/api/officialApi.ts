@@ -12,12 +12,15 @@ export interface MarkerWorkItem {
     createdAt: string;
     rating: number;
 }
-
+export interface GetTasksParams {
+    status?: string;
+    category?: string;
+    districtId?: string;
+    cityId?: string;
+}
 export const officialApi = {
-    getTasks: async (districtId?: string): Promise<MarkerWorkItem[]> => {
-        const response = await api.get('/official/queue', {
-            params: { districtId, limit: 50 }
-        });
+    getTasks: async (params: GetTasksParams = {}): Promise<MarkerWorkItem[]> => {
+        const response = await api.get('/official/queue', { params });
         return response.data;
     }
 };

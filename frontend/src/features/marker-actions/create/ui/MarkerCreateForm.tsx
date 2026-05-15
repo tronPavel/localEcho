@@ -11,12 +11,14 @@ import { ImageUploader } from '@/shared/ui/ImageUploader/ImageUploader';
 
 import styles from './MarkerCreateForm.module.css';
 import {useMapInteractionStore} from "@/features/map-control/model/interactionStore.ts";
+import {toast} from "sonner";
 
 interface FormFields {
     title: string;
     description: string;
     category: MarkerCategory;
-    scheduledAt?: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 export const MarkerCreateForm = ({ onSuccess }: { onSuccess: () => void }) => {
@@ -31,6 +33,12 @@ export const MarkerCreateForm = ({ onSuccess }: { onSuccess: () => void }) => {
     const category = watch('category');
 
     const onSubmit = (data: FormFields) => {
+        if (data.category === 'Event' && data.startDate && data.endDate) {
+            if (new Date(data.endDate) < new Date(data.startDate)) {
+                return toast.error("Дата окончания не может быть раньше начала");
+            }
+        }
+
         mutate({
             ...data,
             points: tempPoints,
@@ -64,12 +72,18 @@ export const MarkerCreateForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 </Select>
 
                 {category === 'Event' && (
-                    <Input
-                        label="Время проведения"
-                        type="datetime-local"
-                        {...register('scheduledAt', { required: 'Укажите время' })}
-                        error={errors.scheduledAt?.message}
-                    />
+                    <div className={styles.row}>
+                        <Input
+                            label="Дата и время начала"
+                            type="datetime-local"
+                            {...register('startDate', { required: 'Укажите начало' })}
+                        />
+                        <Input
+                            label="Дата и время окончания"
+                            type="datetime-local"
+                            {...register('endDate', { required: 'Укажите конец' })}
+                        />
+                    </div>
                 )}
 
                 <ImageUploader label="Добавить фото (ДО)" onFilesChange={setFiles} />

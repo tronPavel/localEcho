@@ -5,7 +5,18 @@
     border: 1px solid #e2e8f0;
     overflow: hidden;
 }
+.header {
+    padding: 32px;
+    background-color: white;
+    border-bottom: 1px solid #f1f5f9;
+}
 
+.header h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--color-primary);
+    margin: 0;
+}
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -46,4 +57,15 @@
     background: rgba(6, 78, 59, 0.05);
     padding: 4px 8px;
     border-radius: 4px;
+}
+.filterBar {
+    display: flex;
+    gap: 20px;
+    padding: 24px;
+    background-color: var(--color-bg-warm);
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filterGroup {
+    width: 240px;
 }

@@ -4,18 +4,47 @@ import { formatDate } from '@/shared/lib/utils/formatDate';
 import { useNavigate } from 'react-router-dom';
 import styles from './OfficialWorkQueue.module.css';
 import {officialApi} from "@/entities/marker/api/officialApi.ts";
+import {useState} from "react";
+import { Select } from "@/shared/ui/Select/Select";
+import {useCityStore} from "@/features/city-selector/model/cityStore.ts";
 
 export const OfficialWorkQueue = () => {
     const navigate = useNavigate();
+    const [status, setStatus] = useState<string>('');
+    const [category, setCategory] = useState<string>('');
+    const { currentCityId } = useCityStore();
     const { data: tasks = [], isLoading } = useQuery({
-        queryKey: ['official-tasks'],
-        queryFn: () => officialApi.getTasks(),
+        queryKey: ['official-tasks', currentCityId, status, category],
+        queryFn: () => officialApi.getTasks({
+            cityId: currentCityId || undefined,
+            status: status || undefined,
+            category: category || undefined
+        }),
     });
 
     if (isLoading) return <div>Загрузка задач...</div>;
 
     return (
         <div className={styles.container}>
+            <header className={styles.header}>
+                <h2>Очередь: {useCityStore.getState().currentCityName}</h2>
+            </header>
+            <div className={styles.filterBar}>
+                <div className={styles.filterGroup}>
+                    <Select label="Статус" value={status} onChange={e => setStatus(e.target.value)}>
+                        <option value="">Все статусы</option>
+                        <option value="Active">Новые (Active)</option>
+                        <option value="InProgress">В работе</option>
+                    </Select>
+                </div>
+                <div className={styles.filterGroup}>
+                    <Select label="Категория" value={category} onChange={e => setCategory(e.target.value)}>
+                        <option value="">Все категории</option>
+                        <option value="Issue">⚠️ Проблемы</option>
+                        <option value="Suggestion">💡 Предложения</option>
+                    </Select>
+                </div>
+            </div>
             <table className={styles.table}>
                 <thead>
                 <tr>

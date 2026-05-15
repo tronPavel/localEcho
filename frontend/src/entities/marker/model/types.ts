@@ -24,6 +24,7 @@ export interface MarkerMapResponse {
     geometryType: 'Point' | 'Polygon';
     coordinates: Coordinate[];
     centroid: Coordinate;
+    sOfficial: boolean;
 }
 
 export interface MarkerDetailResponse {
@@ -43,8 +44,9 @@ export interface MarkerDetailResponse {
     geometryType: 'Point' | 'Polygon';
     coordinates: Coordinate[];
     resolutions?: MarkerResolutionResponse[];
-    expiresAt?: string;
     scheduledAt?: string;
+    expiresAt?: string;
+    isOfficial: boolean;
 }
 
 export interface CreateMarkerRequest {
@@ -53,6 +55,7 @@ export interface CreateMarkerRequest {
     category: MarkerCategory;
     points: Coordinate[];
     imageFiles?: File[];
-    scheduledAt?: string;
+    startDate?: string;
+    endDate?: string;
 }
 

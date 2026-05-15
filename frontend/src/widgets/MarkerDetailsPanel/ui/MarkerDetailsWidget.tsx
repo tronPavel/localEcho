@@ -29,70 +29,59 @@ export const MarkerDetailsWidget = ({ id }: MarkerDetailsWidgetProps) => {
     });
 
     if (isLoading) return <div className={styles.loading}>Анализируем детали...</div>;
-    if (isError || !marker) return <div className={styles.error}>Метка не найдена или удалена.</div>;
+    if (isError || !marker) return <div className={styles.error}>Метка не найдена.</div>;
 
     const showDelete = isOwner(marker.creatorId) || isAdmin || isModerator;
 
     return (
         <div className={styles.container}>
-            {/* ГАЛЕРЕЯ */}
             <ImageSlider urls={marker.imageUrls} height={480} />
 
             <div className={styles.mainPadding}>
-                {/* 1. ЗАГОЛОВОК И СТАТУС */}
                 <header className={styles.topSection}>
                     <div className={styles.titleArea}>
+                        {marker.isOfficial && (
+                            <div className={styles.officialBadge}>
+                                <VerifiedBadge /> Подтверждено службами
+                            </div>
+                        )}
                         <h1 className={styles.bigTitle}>{marker.title}</h1>
                         <div className={styles.yellowDivider} />
                     </div>
                     <StatusTimeline category={marker.category} currentStatus={marker.status} />
                 </header>
 
-
-                {/* 3. КАРТОЧКА ДАТ (ДЛЯ МЕРОПРИЯТИЙ) */}
                 {marker.category === 'Event' && marker.scheduledAt && (
-                    <div className={styles.dateCard}>
-                        <div className={styles.dateItem}>
-                            <span className={styles.dLabel}>Начало</span>
-                            <span className={styles.dValue}>🗓 {formatDate(marker.scheduledAt)}</span>
-                        </div>
-                        <div className={styles.dDivider} />
-                        <div className={styles.dateItem}>
-                            <span className={styles.dLabel}>Завершение</span>
-                            <span className={styles.dValue}>🏁 {marker.expiresAt ? formatDate(marker.expiresAt) : 'До победного'}</span>
-                        </div>
+                    <div className={styles.eventTimeRange}>
+                        <span>📅 Начало: {formatDate(marker.scheduledAt)}</span>
+                        {marker.expiresAt && <span> — Конец: {formatDate(marker.expiresAt)}</span>}
                     </div>
                 )}
 
-                {/* 4. КОНТЕНТ */}
                 <div className={styles.bodyContent}>
                     <p className={styles.description}>{marker.description}</p>
                 </div>
 
-                {/* 5. КАРТОЧКА АВТОРА (Улучшенная и компактная) */}
                 <footer className={styles.authorSection}>
                     <UserAvatar
                         user={{
                             name: marker.creatorName,
-                            avatarUrl: marker.creatorAvatarUrl
+                            avatarUrl: marker.creatorAvatarUrl,
+                            roles: marker.isOfficial ? ['Official'] : [] // Чтобы аватар тоже подсветился если офиц.
                         }}
                         size="medium"
                     />
                     <div className={styles.authorMeta}>
-                        <div className={styles.nickRow}>
-                            <span className={styles.authorNick}>{marker.creatorName}</span>
-                            {/* Позже здесь можно вывести роль автора баджем */}
-                        </div>
+                        <span className={styles.authorNick}>{marker.creatorName}</span>
                         <div className={styles.timeGroup}>
                             <span>Опубликовано {formatDate(marker.createdAt)}</span>
                             {marker.updatedAt && (
-                                <span className={styles.updTime}> • Изменено {formatDate(marker.updatedAt)}</span>
+                                <span className={styles.updTime}> • Изменено</span>
                             )}
                         </div>
                     </div>
                 </footer>
 
-                {/* 2. БЛОК УПРАВЛЕНИЯ (Вынесено из автора) */}
                 <section className={styles.interactiveRow}>
                     <div className={styles.voteSide}>
                         <VoteButtons
@@ -103,9 +92,10 @@ export const MarkerDetailsWidget = ({ id }: MarkerDetailsWidgetProps) => {
                         <Button
                             variant="outline"
                             size="small"
-                            onClick={() => navigate(`/marker/${marker.id}/report`)} // Сделаем это роутом-модалкой
+                            title="Пожаловаться"
+                            onClick={() => navigate(`/marker/${marker.id}/report`)}
                         >
-                            🚩
+                            Пожаловаться
                         </Button>
                     </div>
                     <div className={styles.controlSide}>
@@ -115,17 +105,16 @@ export const MarkerDetailsWidget = ({ id }: MarkerDetailsWidgetProps) => {
                                 variant="secondary"
                                 onClick={() => navigate(`/marker/${id}/resolve`)}
                             >
-                                ✍️ Дать ответ
+                                Дать ответ
                             </Button>
                         )}
                         {showDelete && <DeleteMarkerButton markerId={marker.id} />}
                     </div>
                 </section>
 
-                {/* 6. ОФИЦИАЛЬНАЯ ЛЕНТА ОТВЕТОВ */}
                 {marker.resolutions && marker.resolutions.length > 0 && (
                     <div className={styles.resolutionsHistory}>
-                        <h3 className={styles.historyTitle}>Хронология ответов</h3>
+                        <h3 className={styles.historyTitle}>Хронология решения</h3>
                         {marker.resolutions.map((res, i) => (
                             <article key={i} className={styles.resCard}>
                                 <div className={styles.resHeader}>

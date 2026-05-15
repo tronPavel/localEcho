@@ -25,13 +25,12 @@
 }
 
 .active {
-    background: white !important;
+    background: white;
     border-color: rgba(6, 78, 59, 0.1);
     box-shadow: var(--shadow-soft);
-    color: var(--color-primary) !important;
+    color: var(--color-primary);
 }
 
-/* Цветные индикаторы для каждого статуса */
 .dot {
     width: 10px;
     height: 10px;
@@ -40,17 +39,14 @@
     flex-shrink: 0;
 }
 
-/* Специфические цвета для статусов (как на бэкенде) */
 .active .active { background-color: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 .active .inprogress { background-color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
 .active .resolved { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 
-/* Событийные статусы */
 .upcoming { background-color: #3b82f6; }
 .ongoing { background-color: #f97316; }
 .passed { background-color: #94a3b8; }
 
-/* Объявления и идеи */
 .current { background-color: #6366f1; }
 .archived { background-color: #64748b; }
 .review { background-color: #8b5cf6; }

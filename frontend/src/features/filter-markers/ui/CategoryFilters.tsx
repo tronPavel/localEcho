@@ -15,7 +15,7 @@ export const CategoryFilters = () => {
 
     const handleSelect = (id: string | null) => {
         setCategory(id);
-        setStatus(null); // Сбрасываем статус при смене категории!
+        setStatus(null);
     };
 
     return (

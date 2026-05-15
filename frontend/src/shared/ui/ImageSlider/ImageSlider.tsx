@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { getImageUrl } from "@/shared/api/apiInstance";
+import { classNames } from "@/shared/lib/utils/classNames";
+
 //@ts-ignore
 import 'swiper/css';
 //@ts-ignore
@@ -14,6 +17,29 @@ interface ImageSliderProps {
     urls: string[];
     height?: number | string;
 }
+
+
+const SmartImage = ({ url }: { url: string }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    return (
+        <div className={styles.slideWrapper}>
+            {!isLoaded && (
+                <div className={styles.loader}>
+                    <div className={styles.spinner} />
+                    <span className={styles.loaderText}>Загрузка...</span>
+                </div>
+            )}
+            <img
+                src={getImageUrl(url)}
+                alt="slide content"
+                className={classNames(styles.image, isLoaded && styles.imageLoaded)}
+                onLoad={() => setIsLoaded(true)}
+                loading="lazy"
+            />
+        </div>
+    );
+};
 
 export const ImageSlider = ({ urls, height = 320 }: ImageSliderProps) => {
     if (!urls || urls.length === 0) {
@@ -30,12 +56,7 @@ export const ImageSlider = ({ urls, height = 320 }: ImageSliderProps) => {
         >
             {urls.map((url, i) => (
                 <SwiperSlide key={url || i}>
-                    <img
-                        src={getImageUrl(url)}
-                        alt="slide"
-                        className={styles.image}
-                        loading="lazy"
-                    />
+                    <SmartImage url={url} />
                 </SwiperSlide>
             ))}
         </Swiper>

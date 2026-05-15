@@ -2,14 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '@/entities/analytics/api/analyticsApi';
 import styles from './AnalyticsWidget.module.css';
 import type {CategoryMetric} from "@/entities/analytics/model/types.ts";
+import {useCityStore} from "@/features/city-selector/model/cityStore.ts";
 
 export const AnalyticsWidget = () => {
+    const { currentCityId, currentCityName } = useCityStore();
     const { data: stats, isLoading } = useQuery({
-        queryKey: ['city-pulse'],
-        queryFn: analyticsApi.getCityPulse,
+        queryKey: ['city-pulse', currentCityId],
+        queryFn: () => analyticsApi.getCityPulse(currentCityId),
     });
 
-    if (isLoading) return <div className={styles.loader}>Собираем данные по Минску...</div>;
+    if (isLoading) return <div className={styles.loader}>Собираем данные по городу: {currentCityName}...</div>;
     if (!stats) return null;
 
     return (

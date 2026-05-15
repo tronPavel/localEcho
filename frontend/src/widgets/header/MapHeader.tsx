@@ -3,17 +3,52 @@ import { UserAvatar } from '@/entities/user/ui/UserAvatar.tsx';
 import { Button } from '@/shared/ui/Button/Button.tsx';
 import styles from './MapHeader.module.css';
 import {useNavigate} from "react-router-dom";
+import {cityApi} from "@/entities/city/api/cityApi.ts";
+import {useQuery} from "@tanstack/react-query";
+import {useCityStore} from "@/features/city-selector/model/cityStore.ts";
+import {Select} from "@/shared/ui/Select/Select.tsx";
 
 export const MapHeader = ({  onOpenProfile, onOpenLogin, onOpenRegister }: any) => {
     const { isAuthenticated, user } = useAuthStore();
     const {  canAccessDashboard } = usePermissions();
     const navigate = useNavigate();
+
+    const { currentCityId, setCity } = useCityStore();
+    const { data: cities = [] } = useQuery({
+        queryKey: ['cities-list'],
+        queryFn: cityApi.getList
+    });
+    const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const id = e.target.value;
+
+        if (!id) {
+            setCity(null, 'Все города', null);
+            return;
+        }
+
+        const selectedCity = cities.find(c => c.id === id);
+
+        if (selectedCity) {
+            const focus: [number, number] = [selectedCity.lat, selectedCity.lng];
+            setCity(id, selectedCity.name, focus);
+        }
+    };
     return (
         <header className={styles.header}>
             <div className={styles.logoGroup}>
                 <h1 className={styles.brand}>Local<span>Echo</span></h1>
-            </div>
 
+            <div className={styles.cityPicker}>
+                <Select
+                    value={currentCityId || ''}
+                    onChange={handleCityChange}
+                    className={styles.citySelect}
+                >
+                    <option value="">Весь мир</option>
+                    {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </Select>
+            </div>
+        </div>
             <div className={styles.actions}>
                 <Button
                     variant="outline"

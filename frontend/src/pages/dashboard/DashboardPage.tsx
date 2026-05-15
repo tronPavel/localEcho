@@ -1,14 +1,17 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import {Outlet, NavLink, useNavigate} from 'react-router-dom';
 import { usePermissions } from '@/features/auth/model/authStore';
 import { classNames } from '@/shared/lib/utils/classNames';
 import styles from './DashboardPage.module.css';
 
 export const DashboardPage = () => {
     const { isAdmin, isModerator, isOfficial } = usePermissions();
-
+    const navigate = useNavigate();
     return (
         <div className={styles.container}>
             <aside className={styles.sidebar}>
+                <button className={styles.exitBtn} onClick={() => navigate('/')}>
+                    ← Назад на карту
+                </button>
                 <div className={styles.sidebarHeader}>
                     <h3>Панель управления</h3>
                     <div className={styles.accentLine} />
@@ -17,7 +20,7 @@ export const DashboardPage = () => {
                 <nav className={styles.nav}>
                     {(isAdmin || isModerator) && (
                         <NavLink to="reports" className={({isActive}) => classNames(styles.link, isActive && styles.active)}>
-                            🚩 Жалобы жителей
+                            Жалобы жителей
                         </NavLink>
                     )}
 
@@ -30,10 +33,10 @@ export const DashboardPage = () => {
                     {isAdmin && (
                         <>
                             <NavLink to="users" className={({isActive}) => classNames(styles.link, isActive && styles.active)}>
-                                👥 Пользователи
+                                Пользователи
                             </NavLink>
                             <NavLink to="districts" className={({isActive}) => classNames(styles.link, isActive && styles.active)}>
-                                🗺 Границы районов
+                                Границы районов
                             </NavLink>
                         </>
                     )}

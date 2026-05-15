@@ -25,7 +25,7 @@ export const SearchControl = () => {
             retainZoomLevel: false,
             animateZoom: true,
             keepResult: true,
-            searchLabel: 'Введите адрес в Минске...',
+            searchLabel: 'Введите адрес...',
         });
 
         map.addControl(searchControl);

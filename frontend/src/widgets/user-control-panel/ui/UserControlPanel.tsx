@@ -19,7 +19,6 @@ export const UserControlPanel = () => {
         enabled: debouncedSearch.length > 2
     });
 
-    // Мутация добавления
     const addRoleMutation = useMutation({
         mutationFn: ({ userId, role }: { userId: string, role: string }) =>
             adminUserApi.changeRole(userId, role),
@@ -29,7 +28,6 @@ export const UserControlPanel = () => {
         }
     });
 
-    // Мутация удаления (Новая)
     const removeRoleMutation = useMutation({
         mutationFn: ({ userId, role }: { userId: string, role: string }) =>
             adminUserApi.removeRole(userId, role),

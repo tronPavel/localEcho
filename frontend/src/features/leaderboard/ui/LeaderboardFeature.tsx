@@ -7,19 +7,24 @@ import { useAuthStore } from '@/features/auth/model/authStore';
 import styles from './LeaderboardFeature.module.css';
 import {districtApi} from "@/entities/district/model/districtApi.ts";
 import {classNames} from "@/shared/lib/utils/classNames.ts";
+import {cityApi} from "@/entities/city/api/cityApi.ts";
 
 export const LeaderboardFeature = () => {
     const user = useAuthStore(s => s.user);
-    const [districtId, setDistrictId] = useState<string | undefined>(user?.districtId || undefined);
+    const [cityId, setCityId] = useState<string>('');
+    const [districtId, setDistrictId] = useState<string>('');
 
-    const { data: leaders = [], isFetching } = useQuery({
-        queryKey: ['leaderboard', districtId],
-        queryFn: () => getLeaderboard(districtId),
-    });
+    const { data: cities = [] } = useQuery({ queryKey: ['cities'], queryFn: cityApi.getList });
 
     const { data: districts = [] } = useQuery({
-        queryKey: ['districts-list'],
-        queryFn: districtApi.getList,
+        queryKey: ['districts', cityId],
+        queryFn: () => districtApi.getList(cityId),
+        enabled: !!cityId
+    });
+
+    const { data: leaders = [], isFetching } = useQuery({
+        queryKey: ['leaderboard', cityId, districtId],
+        queryFn: () => getLeaderboard({ cityId, districtId }),
     });
 
     const getCrown = (rank: number) => {
@@ -32,13 +37,14 @@ export const LeaderboardFeature = () => {
     return (
         <div className={styles.container}>
             <div className={styles.filterCard}>
-                <Select
-                    label="Рейтинг по территории"
-                    value={districtId || ''}
-                    onChange={(e) => setDistrictId(e.target.value || undefined)}
-                >
-                    <option value="">Глобальный рейтинг</option>
-                    {districts.map(d => <option key={d.id} value={d.id}>🏘 {d.name}</option>)}
+                <Select label="Город" value={cityId} onChange={e => { setCityId(e.target.value); setDistrictId(''); }}>
+                    <option value="">Весь мир</option>
+                    {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </Select>
+
+                <Select label="Район" value={districtId} onChange={e => setDistrictId(e.target.value)} disabled={!cityId}>
+                    <option value="">Все районы</option>
+                    {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </Select>
             </div>
 

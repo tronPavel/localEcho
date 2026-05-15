@@ -8,7 +8,8 @@ export interface RegisterDto {
     password: string;
     confirmPassword: string;
     name: string;
-    districtId: string;
+    cityId: string;
+    districtId?: string;
     homeAddress?: string;
 }
 
@@ -32,15 +33,6 @@ export interface AuthResponseDto {
     roles: string[];
     latitude?: number;
     longitude?: number;
-}
-
-export interface DistrictDto {
-    id: string;
-    name: string;
-    description?: string;
-    centerLat: number;
-    centerLng: number;
-    iconColor: string;
 }
 
 export interface LeaderboardEntryDto {

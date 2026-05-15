@@ -7,7 +7,9 @@ export const createMarkerApi = {
         formData.append('Title', data.title);
         formData.append('Category', data.category);
         if (data.description) formData.append('Description', data.description);
-        if (data.scheduledAt) formData.append('ScheduledAt', data.scheduledAt);
+        if (data.startDate) formData.append('StartDate', data.startDate);
+        if (data.endDate) formData.append('EndDate', data.endDate);
+
 
         data.points.forEach((p, index) => {
             formData.append(`Points[${index}].Lat`, p.lat.toString());

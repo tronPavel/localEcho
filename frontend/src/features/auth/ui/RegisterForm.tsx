@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -9,12 +8,13 @@ import { Select } from '@/shared/ui/Select/Select';
 import { Button } from '@/shared/ui/Button/Button';
 
 import { registerSchema } from '../lib/validateAuth';
-import { register as registerUserApi } from '../model/authApi';
+import { register as registerApi } from '../model/authApi';
 import { useAuthStore } from '../model/authStore';
-import { districtApi} from "@/entities/district/model/districtApi";
+import { cityApi } from '@/entities/city/api/cityApi';
 import type { RegisterDto } from '../model/types';
 
 import styles from './AuthForms.module.css';
+import {districtApi} from "@/entities/district/model/districtApi.ts";
 
 interface RegisterFormProps {
     onSuccess: () => void;
@@ -23,133 +23,109 @@ interface RegisterFormProps {
 
 export const RegisterForm = ({ onSuccess, onSwitch }: RegisterFormProps) => {
     const { setUser } = useAuthStore();
-    const [isLocating, setIsLocating] = useState(false);
 
     const {
-        register: control,
+        register,
         handleSubmit,
-        setValue,
-        setError,
+        watch,
         formState: { errors }
     } = useForm<RegisterDto>({
         resolver: zodResolver(registerSchema),
-    });
-
-    const { data: districts = [] } = useQuery({
-        queryKey: ['districts-list'],
-        queryFn: districtApi.getList,
-    });
-
-    const mutation = useMutation({
-        mutationFn: registerUserApi,
-        onSuccess: (data) => {
-            setUser(data);
-            toast.success(`Рады знакомству, ${data.name}! ✨`);
-            onSuccess();
-        },
-        onError: (err: any) => {
-            const serverErrors = err.response?.data?.errors;
-            if (serverErrors) {
-                // Мапим ошибки сервера на поля формы
-                Object.keys(serverErrors).forEach((key) => {
-                    setError(key as keyof RegisterDto, {
-                        type: "server",
-                        message: serverErrors[key][0]
-                    });
-                });
-            } else {
-                toast.error(err.response?.data?.detail || "Ошибка регистрации");
-            }
+        defaultValues: {
+            cityId: '',
+            districtId: ''
         }
     });
 
-    const handleAutoDetect = () => {
-        if (!("geolocation" in navigator)) return toast.error("GPS не поддерживается");
+    const selectedCityId = watch('cityId');
 
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                try {
-                    const result = await districtApi.findByCoords(pos.coords.latitude, pos.coords.longitude);
-                    setValue('districtId', result.id, { shouldValidate: true });
-                    toast.success(`Ваш район: ${result.name}`);
-                } catch (e) {
-                    toast.info("Местоположение вне зон обслуживания. Вы в режиме гостя.");
-                } finally {
-                    setIsLocating(false);
-                }
-            },
-            () => {
-                toast.error("Доступ к GPS отклонен");
-                setIsLocating(false);
-            }
-        );
-    };
+    const { data: cities = [] } = useQuery({
+        queryKey: ['cities-list'],
+        queryFn: cityApi.getList
+    });
+
+    const { data: districts = [], isFetching: isDistrictsLoading } = useQuery({
+        queryKey: ['districts-by-city', selectedCityId],
+        queryFn: () => districtApi.getList(selectedCityId),
+        enabled: !!selectedCityId,
+    });
+
+    const mutation = useMutation({
+        mutationFn: registerApi,
+        onSuccess: (data) => {
+            setUser(data);
+            toast.success(`Рады знакомству, ${data.name}!`);
+            onSuccess();
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.detail || "Ошибка регистрации");
+        }
+    });
 
     return (
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className={styles.form}>
             <div className={styles.registerGrid}>
-                {/* Левая колонка */}
                 <div className={styles.column}>
                     <Input
-                        label="Электронная почта"
-                        placeholder="minsk@example.by"
-                        {...control('email')}
+                        label="Email"
+                        placeholder="example@mail.com"
+                        {...register('email')}
                         error={errors.email?.message}
                     />
+
                     <Input
-                        label="Никнейм"
-                        placeholder="minsk_pioneer"
-                        {...control('name')}
+                        label="Ваше имя"
+                        placeholder="ivan_ivanov"
+                        {...register('name')}
                         error={errors.name?.message}
                     />
-                    <div className={styles.districtContainer}>
-                        <Select label="Ваш район" {...control('districtId')} error={errors.districtId?.message}>
-                            <option value="">Не привязан (Гость)</option>
-                            {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                        </Select>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className={styles.locateBtn}
-                            onClick={handleAutoDetect}
-                            disabled={isLocating}
-                        >
-                            {isLocating ? "⌛" : "🎯"}
-                        </Button>
-                    </div>
+
+                    <Select
+                        label="Город"
+                        {...register('cityId')}
+                        error={errors.cityId?.message}
+                    >
+                        <option value="" disabled>Выберите город</option>
+                        {cities.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </Select>
                 </div>
 
-                {/* Правая колонка */}
                 <div className={styles.column}>
+                    <Select
+                        label="Район"
+                        {...register('districtId')}
+                        disabled={!selectedCityId}
+                    >
+                        <option value="">{isDistrictsLoading ? 'Загрузка...' : 'Весь город / Не выбрано'}</option>
+                        {districts.map((d) => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                    </Select>
+
                     <Input
                         label="Пароль"
                         type="password"
-                        placeholder="Минимум 6 знаков"
-                        {...control('password')}
+                        {...register('password')}
                         error={errors.password?.message}
                     />
+
                     <Input
-                        label="Подтверждение"
+                        label="Повторите пароль"
                         type="password"
-                        placeholder="Повторите пароль"
-                        {...control('confirmPassword')}
+                        {...register('confirmPassword')}
                         error={errors.confirmPassword?.message}
-                    />
-                    <Input
-                        label="Домашний адрес"
-                        placeholder="Напр: ул. Независимости, 10"
-                        {...control('homeAddress')}
                     />
                 </div>
             </div>
 
             <div className={styles.formFooter}>
                 <Button type="submit" disabled={mutation.isPending}>
-                    {mutation.isPending ? 'Создаем...' : 'Стать частью сообщества'}
+                    {mutation.isPending ? 'Загрузка...' : 'Зарегистрироваться'}
                 </Button>
                 <p className={styles.switch}>
-                    Уже зарегистрированы? <span onClick={onSwitch}>Войти</span>
+                    Уже есть аккаунт? <span onClick={onSwitch}>Войти</span>
                 </p>
             </div>
         </form>

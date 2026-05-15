@@ -2,6 +2,9 @@ import { useVote } from '../model/useVote';
 import { Button } from "@/shared/ui/Button/Button";
 import { Icon } from "@/shared/ui/Icon/Icon";
 import styles from './VoteButtons.module.css';
+import {useAuthStore} from "@/features/auth/model/authStore.ts";
+import {useLocation, useNavigate} from "react-router-dom";
+import {toast} from "sonner";
 
 interface VoteButtonsProps {
     markerId: string;
@@ -10,14 +13,27 @@ interface VoteButtonsProps {
 }
 
 export const VoteButtons = ({ markerId, currentVote, rating }: VoteButtonsProps) => {
+    const { isAuthenticated } = useAuthStore();
+    const navigate = useNavigate();
+    const location = useLocation();
     const { mutate, isPending } = useVote(markerId);
+
+    const handleVote = (isUp: boolean) => {
+        if (!isAuthenticated) {
+            toast.info("Войдите, чтобы проголосовать");
+            navigate('/login', { state: { from: location } });
+            return;
+        }
+        mutate(isUp);
+    };
+
 
     return (
         <div className={styles.buttons}>
             <Button
                 variant="outline"
                 size="small"
-                onClick={() => mutate(true)}
+                onClick={() => handleVote(true)}
                 className={currentVote === 1 ? styles.active : ''}
                 disabled={isPending}
             >
@@ -26,7 +42,7 @@ export const VoteButtons = ({ markerId, currentVote, rating }: VoteButtonsProps)
             <Button
                 variant="outline"
                 size="small"
-                onClick={() => mutate(false)}
+                onClick={() => handleVote(false)}
                 className={currentVote === -1 ? styles.active : ''}
                 disabled={isPending}
             >

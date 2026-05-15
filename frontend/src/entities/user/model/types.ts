@@ -1,31 +1,23 @@
-import type {DistrictDto} from "@/features/auth/model/types.ts";
-
-export interface UserDto {
-    id: string;
-    name: string;
-    email: string;
-    avatarUrl?: string;
-    districtId?: string;
-    points: number;
-    roles: string[];
-}
-
 export interface UpdateProfileDto {
     name?: string;
+    bio?: string;
     homeAddress?: string;
+    cityId?: string;
     districtId?: string;
     avatarFile?: File;
 }
+
 export interface UserProfileDto {
     id: string;
     email: string;
     name: string;
+    bio?: string;
     avatarUrl?: string;
     homeAddress?: string;
-    isVerified: boolean;
     points: number;
     createdAt: string;
-    district?: DistrictDto;
+    city?: { id: string; name: string };
+    district?: { id: string; name: string };
     roles: string[];
     latitude?: number;
     longitude?: number;

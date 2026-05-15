@@ -21,14 +21,18 @@
 .m-icon-body:hover {
     transform: scale(1.2);
 }
-
+.m-icon--official {
+    border: 2px solid var(--color-accent-yellow);
+    box-shadow: 0 0 10px var(--color-accent-yellow);
+    z-index: 1000;
+}
 .m-icon--pulsing::after {
     content: '';
     position: absolute;
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: inherit; /* берет цвет из родителя */
+    background: inherit;
     opacity: 0.6;
     animation: marker-pulse 2s infinite;
     z-index: -1;
