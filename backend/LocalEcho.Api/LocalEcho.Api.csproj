@@ -26,19 +26,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Resources\SeedImages\img1.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\SeedImages\img3.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Resources\SeedImages\img4.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+      <Folder Include="wwwroot\" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="wwwroot\uploads\" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\3707a93a-7e21-431d-9d8d-9db027c4161c.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\44054b95-8ba0-4427-b048-6c17a9eeff13.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\8fbae2a6-9b76-46e7-85c4-962aae589b69.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\ava1.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\ava2.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\ava3.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\avatar.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\avatars\avatar2.png" />
     </ItemGroup>
 
 </Project>

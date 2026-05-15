@@ -7,13 +7,13 @@ public class AnalyticsService : IAnalyticsService
     private readonly IAnalyticsRepository _repo;
     public AnalyticsService(IAnalyticsRepository repo) => _repo = repo;
 
-    public async Task<GlobalAnalyticsDto> GetFullCityStatsAsync(CancellationToken ct)
+    public async Task<GlobalAnalyticsDto> GetFullCityStatsAsync(Guid? cityId, CancellationToken ct)
     {
-        return new GlobalAnalyticsDto(
-            await _repo.GetGlobalCountersAsync(ct),
-            await _repo.GetServiceEfficiencyAsync(ct),
-            await _repo.GetCategoryDistributionAsync(ct),
-            await _repo.GetDistrictRankingAsync(5, ct)
-        );
+        var counters = await _repo.GetGlobalCountersAsync(cityId, ct);
+        var efficiency = await _repo.GetServiceEfficiencyAsync(cityId, ct);
+        var categories = await _repo.GetCategoryDistributionAsync(cityId, ct);
+        var districts = await _repo.GetDistrictRankingAsync(cityId, 5, ct);
+
+        return new GlobalAnalyticsDto(counters, efficiency, categories, districts);
     }
 }

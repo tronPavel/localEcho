@@ -4,5 +4,5 @@ namespace LocalEcho.Application.Interfaces;
 
 public interface IAnalyticsService
 {
-    Task<GlobalAnalyticsDto> GetFullCityStatsAsync(CancellationToken ct);
+    Task<GlobalAnalyticsDto> GetFullCityStatsAsync(Guid? cityId, CancellationToken ct);
 }

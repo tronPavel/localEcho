@@ -11,6 +11,8 @@ public record AuthResponseDto(
     string Email,
     string Name,
     string? AvatarUrl,
+    Guid? CityId,
+    string? CityName,
     Guid? DistrictId,
     string? DistrictName,
     int Points,
@@ -31,22 +33,22 @@ public record LoginDto(
 
 public record RegisterDto
 {
-    [Required]
-    [EmailAddress]
+    [Required] [EmailAddress]
     public string Email { get; init; } = string.Empty;
 
-    [Required]
-    [StringLength(100, MinimumLength = 6)]
+    [Required] [StringLength(100, MinimumLength = 6)]
     public string Password { get; init; } = string.Empty;
 
-    [Required]
-    [Compare("Password", ErrorMessage = "Пароли не совпадают")]
+    [Required] [Compare("Password")]
     public string ConfirmPassword { get; init; } = string.Empty;
 
     [Required]
     public string Name { get; init; } = string.Empty; 
     
-    public Guid? DistrictId { get; init; }
+    [Required]
+    public Guid CityId { get; init; } 
 
-    public string? HomeAddress { get; init; }
+    public Guid? DistrictId { get; init; } 
+
+    public string? HomeAddress { get; init; } 
 }

@@ -14,19 +14,22 @@ public class UserService : IUserService
     private readonly IGeocodingService _geocodingService;
     private readonly IIdentityRepository _identityRepository;
     private readonly IFileService _fileService;
+    private readonly ICityRepository _cityRepository;
     
     public UserService(
         IUserRepository userRepository, 
         IIdentityRepository identityRepository, 
         IDistrictRepository districtRepository,
         IGeocodingService geocodingService,
-        IFileService fileService) 
+        IFileService fileService,
+        ICityRepository cityRepository) 
     {
         _userRepository = userRepository;
         _districtRepository = districtRepository;
         _geocodingService = geocodingService;
         _identityRepository = identityRepository;
         _fileService = fileService;
+        _cityRepository = cityRepository;
     }
 
     public async Task<UserProfileDto> GetProfileAsync(Guid userId)
@@ -35,7 +38,17 @@ public class UserService : IUserService
                    ?? throw new KeyNotFoundException("Пользователь не найден."); 
                
         var roles = await _identityRepository.GetRolesAsync(user);
-    
+
+        CityBriefDto? cityDto = null;
+        if (user.CityId.HasValue)
+        {
+            var city = await _cityRepository.GetByIdAsync(user.CityId.Value);
+            if (city != null)
+            {
+                cityDto = new CityBriefDto(city.Id, city.Name, 0, 0); 
+            }
+        }
+
         DistrictBriefDto? districtDto = null;
         if (user.DistrictId.HasValue)
         {
@@ -47,35 +60,50 @@ public class UserService : IUserService
         }
 
         return new UserProfileDto(
-            user.Id, 
-            user.Email!, 
-            user.Name ?? "User", 
-            user.AvatarUrl, 
-            user.HomeAddress, 
-            user.Points, 
-            user.CreatedAt, 
-            districtDto, 
-            roles,
-            user.HomeLocation?.Y, 
-            user.HomeLocation?.X 
+            user.Id, user.Email!, user.Name ?? "User", user.Bio, user.AvatarUrl,
+            user.HomeAddress, user.Points, user.CreatedAt,
+            cityDto, districtDto, roles,
+            user.HomeLocation?.Y, user.HomeLocation?.X 
         );
     }
 
-public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
+  public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
 {
     var user = await _userRepository.GetByIdAsync(userId) 
                ?? throw new KeyNotFoundException("Пользователь не найден.");
 
     if (!string.IsNullOrWhiteSpace(dto.Name)) user.Name = dto.Name;
-    
-    if (dto.DistrictId.HasValue && dto.DistrictId != user.DistrictId)
+    user.Bio = dto.Bio;
+
+    Guid? targetCityId = dto.CityId.HasValue ? dto.CityId.Value : user.CityId;
+
+    if (dto.CityId.HasValue && dto.CityId != user.CityId)
     {
-        _ = await _districtRepository.GetByIdAsync(dto.DistrictId.Value)
-                       ?? throw new KeyNotFoundException("Район не найден.");
-        user.DistrictId = dto.DistrictId;
+        var cityExists = await _cityRepository.GetByIdAsync(dto.CityId.Value);
+        if (cityExists == null) throw new BadRequestException("Выбранный город не существует.");
+        
+        user.CityId = dto.CityId;
+        user.DistrictId = null; 
     }
 
-    if (!string.IsNullOrEmpty(dto.HomeAddress) && dto.HomeAddress != user.HomeAddress)
+    if (dto.DistrictId.HasValue)
+    {
+        var district = await _districtRepository.GetByIdAsync(dto.DistrictId.Value);
+        if (district == null) throw new BadRequestException("Выбранный район не найден.");
+
+        if (district.CityId != targetCityId)
+        {
+            throw new BadRequestException($"Район '{district.Name}' не входит в границы выбранного города.");
+        }
+
+        user.DistrictId = dto.DistrictId;
+    }
+    else if (dto.CityId.HasValue && !dto.DistrictId.HasValue)
+    {
+        user.DistrictId = null;
+    }
+
+    if (user.HomeAddress != dto.HomeAddress)
     {
         user.HomeAddress = dto.HomeAddress;
         await SyncCoordinatesAsync(user); 
@@ -83,45 +111,41 @@ public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
 
     if (dto.AvatarFile != null)
     {
-        var oldAvatarUrl = user.AvatarUrl;
-        
         using var stream = dto.AvatarFile.OpenReadStream();
-        var newUrl = await _fileService.SaveFileAsync(stream, dto.AvatarFile.FileName, "avatars");
-
-        user.AvatarUrl = newUrl;
-
-        if (!string.IsNullOrEmpty(oldAvatarUrl))
-        {
-            await _fileService.DeleteFileAsync(oldAvatarUrl);
-        }
+        var url = await _fileService.SaveFileAsync(stream, dto.AvatarFile.FileName, "avatars");
+        if (!string.IsNullOrEmpty(user.AvatarUrl)) await _fileService.DeleteFileAsync(user.AvatarUrl);
+        user.AvatarUrl = url;
     }
 
     await _userRepository.UpdateAsync(user);
 }
-    private async Task SyncCoordinatesAsync(ApplicationUser user)
+private async Task SyncCoordinatesAsync(ApplicationUser user)
+{
+    if (string.IsNullOrWhiteSpace(user.HomeAddress))
     {
-        if (string.IsNullOrEmpty(user.HomeAddress)) return;
+        user.HomeLocation = null;
+        return;
+    }
 
-        var point = await _geocodingService.GetCoordinatesAsync(user.HomeAddress);
+    var point = await _geocodingService.GetCoordinatesAsync(user.HomeAddress);
+    
+    if (point == null)
+    {
+        throw new BadRequestException($"Не удалось найти адрес '{user.HomeAddress}'. Пожалуйста, уточните номер дома или название улицы.");
+    }
+
+    if (user.DistrictId.HasValue)
+    {
+        var isInDistrict = await _districtRepository.IsPointInDistrictAsync(point, user.DistrictId.Value);
         
-        if (point != null)
+        if (!isInDistrict)
         {
-            if (user.DistrictId.HasValue)
-            {
-                var isInDistrict = await _districtRepository.IsPointInDistrictAsync(point, user.DistrictId.Value);
-                if (!isInDistrict)
-                {
-                    throw new BadRequestException("Указанный адрес не относится к вашему району.");
-                }
-            }
-            
-            user.HomeLocation = point;
-        }
-        else
-        {
-            user.HomeLocation = null;
+            throw new BadRequestException("Этот адрес находится в другом районе. Выберите ваш реальный район проживания или исправьте адрес.");
         }
     }
+    
+    user.HomeLocation = point;
+}
     
     public async Task AssignRoleAsync(Guid userId, string roleName)
     {

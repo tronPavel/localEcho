@@ -3,6 +3,7 @@ using LocalEcho.Core.Entities;
 namespace LocalEcho.Core.Models;
 
 public record MarkerWorkFilter(
+    Guid? CityId,  
     Guid? DistrictId,
     MarkerStatus? Status,
     MarkerCategory? Category,

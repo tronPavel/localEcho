@@ -13,7 +13,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<MarkerImage> MarkerImages => Set<MarkerImage>();
     public DbSet<MarkerResolution> MarkerResolutions => Set<MarkerResolution>();
     public DbSet<Report> Reports => Set<Report>();
-
+    public DbSet<City> Cities => Set<City>();
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,6 +45,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                 .WithMany()
                 .HasForeignKey(m => m.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict); 
+            entity.Property(m => m.IsOfficial).HasDefaultValue(false);
+            entity.HasIndex(m => m.CityId);
         });
 
         modelBuilder.Entity<MarkerImage>(entity => {
@@ -78,8 +80,20 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                 .OnDelete(DeleteBehavior.Restrict); 
         });
         
+        modelBuilder.Entity<City>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Name).IsRequired().HasMaxLength(100);
+            entity.Property(c => c.Boundaries).HasColumnType("geometry(Polygon, 4326)").IsRequired();
+            entity.HasIndex(c => c.Boundaries).HasMethod("GIST");
+        });
+        
         modelBuilder.Entity<District>(entity =>
         {
+            entity.HasOne(d => d.City)
+                .WithMany()
+                .HasForeignKey(d => d.CityId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasKey(d => d.Id);
             entity.Property(d => d.Name).IsRequired().HasMaxLength(100);
             
@@ -117,6 +131,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
             entity.Property(u => u.HomeLocation).HasColumnType("geometry(Point, 4326)");
+            entity.Property(u => u.Bio).HasMaxLength(1000);
             entity.HasIndex(u => u.HomeLocation).HasMethod("GIST");
             entity.HasIndex(u => u.DistrictId);
         });

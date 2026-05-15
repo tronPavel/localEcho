@@ -16,7 +16,7 @@ public class MarkerService : IMarkerService
     private readonly IIdentityRepository _identityRepository;
     private readonly IDistrictRepository _districtRepository;
     private readonly IReportRepository _reportRepository;
-    
+    private readonly ICityRepository _cityRepository;
 
     public MarkerService(
         IMarkerRepository markerRepository,
@@ -26,7 +26,8 @@ public class MarkerService : IMarkerService
         IFileService fileService,
         IIdentityRepository identityRepository,
         IDistrictRepository districtRepository, 
-        IReportRepository reportRepository
+        IReportRepository reportRepository,
+        ICityRepository cityRepository
     )
     {
         _markerRepository = markerRepository;
@@ -37,6 +38,7 @@ public class MarkerService : IMarkerService
         _identityRepository = identityRepository;
         _districtRepository = districtRepository;
         _reportRepository = reportRepository;
+        _cityRepository = cityRepository;
     }
 
 public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
@@ -46,9 +48,9 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
 
     var user = await _userRepository.GetByIdAsync(userId);
     var roles = await _identityRepository.GetRolesAsync(user!);
+    
     bool isStaff = roles.Any(r => r is "Admin" or "Official");
 
-    
     Geometry location;
     if (dto.Points.Count == 1) 
     {
@@ -64,12 +66,33 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
     location.SRID = 4326;
 
     Guid? autoDistrictId = null;
+    Guid? autoCityId = null;
     var searchPoint = location is Point p ? p : location.Centroid;
     
     var district = await _districtRepository.GetDistrictByCoordinatesAsync(searchPoint);
-    if (district != null) autoDistrictId = district.Id;
+    if (district != null)
+    {
+        autoDistrictId = district.Id;
+        autoCityId = district.CityId; 
+    }
+    else
+    {
+        var city = await _cityRepository.GetByCoordinatesAsync(searchPoint);
+        if (city != null) autoCityId = city.Id;
+    }
 
-    var marker = Marker.Create(dto.Title, location, dto.Category, userId, autoDistrictId, dto.Description, dto.ScheduledAt);
+    var marker = Marker.Create(
+        title: dto.Title, 
+        location: location, 
+        category: dto.Category, 
+        createdByUserId: userId, 
+        districtId: autoDistrictId, 
+        cityId: autoCityId,
+        isOfficial: isStaff, 
+        description: dto.Description, 
+        startDate: dto.StartDate, 
+        endDate: dto.EndDate
+    );
 
     if (dto.ImageFiles != null && dto.ImageFiles.Any())
     {
@@ -87,31 +110,40 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
     return marker.Id;
 }
 
-    public async Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams)
-    {
-        MarkerCategory? category = null;
-        if (!string.IsNullOrEmpty(queryParams.Category) && Enum.TryParse<MarkerCategory>(queryParams.Category, true, out var c)) category = c;
+public async Task<IEnumerable<MarkerMapDto>> GetMapMarkersAsync(GetMarkersQueryParams queryParams)
+{
+    MarkerCategory? category = null;
+    if (!string.IsNullOrEmpty(queryParams.Category) && Enum.TryParse<MarkerCategory>(queryParams.Category, true, out var c)) 
+        category = c;
 
-        MarkerStatus? status = null;
-        if (!string.IsNullOrEmpty(queryParams.Status) && Enum.TryParse<MarkerStatus>(queryParams.Status, true, out var s)) status = s;
+    MarkerStatus? status = null;
+    if (!string.IsNullOrEmpty(queryParams.Status) && Enum.TryParse<MarkerStatus>(queryParams.Status, true, out var s)) 
+        status = s;
 
-        var filter = new MarkerFilter { 
-            Category = category, Status = status, MinLat = queryParams.MinLat, MaxLat = queryParams.MaxLat, MinLng = queryParams.MinLng, MaxLng = queryParams.MaxLng, Limit = queryParams.Limit 
-        };
+    var filter = new MarkerFilter 
+    { 
+        Category = category, 
+        Status = status, 
+        MinLat = queryParams.MinLat, 
+        MaxLat = queryParams.MaxLat, 
+        MinLng = queryParams.MinLng, 
+        MaxLng = queryParams.MaxLng, 
+        Limit = queryParams.Limit 
+    };
 
-        var markers = await _markerRepository.GetForMapAsync(filter); 
+    var markers = await _markerRepository.GetForMapAsync(filter); 
 
-        return markers.Select(m => new MarkerMapDto(
-            m.Id,
-            m.Title,
-            m.Category,
-            m.Status,
-            m.Location.GeometryType, 
-            m.Location.Coordinates.Select(c => new CoordinateDto(c.Y, c.X)).ToList(),
-            new CoordinateDto(m.Location.Centroid.Y, m.Location.Centroid.X) 
-        ));
-    }
-    
+    return markers.Select(m => new MarkerMapDto(
+        m.Id,
+        m.Title,
+        m.Category,
+        m.Status,
+        m.Location.GeometryType, 
+        m.Location.Coordinates.Select(c => new CoordinateDto(c.Y, c.X)).ToList(),
+        new CoordinateDto(m.Location.Centroid.Y, m.Location.Centroid.X),
+        m.IsOfficial 
+    ));
+}
     
     public async Task VoteAsync(Guid markerId, VoteDto dto, Guid voterId)
     {
@@ -199,39 +231,40 @@ public async Task<Guid> CreateMarkerAsync(CreateMarkerDto dto, Guid userId)
         await _unitOfWork.SaveChangesAsync();
     }
 
-public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
-{
-    var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
-                 ?? throw new KeyNotFoundException("Метка не найдена."); 
+    public async Task<MarkerDetailDto> GetMarkerDetailsAsync(Guid id, Guid? currentUserId)
+    {
+        var detail = await _markerRepository.GetDetailAsync(id, currentUserId) 
+                     ?? throw new KeyNotFoundException("Метка не найдена."); 
 
-    var resolutionDtos = detail.Marker.Resolutions
-        .OrderByDescending(r => r.CreatedAt) 
-        .Select(r => new MarkerResolutionDto(
-            r.Comment,
-            r.ResolvedByUser?.Name ?? "Сотрудник службы", 
-            r.CreatedAt,
-            r.Images.Select(img => img.Url).ToList()
-        )).ToList();
+        var resolutionDtos = detail.Marker.Resolutions
+            .OrderByDescending(r => r.CreatedAt) 
+            .Select(r => new MarkerResolutionDto(
+                r.Comment,
+                r.ResolvedByUser?.Name ?? "Сотрудник службы", 
+                r.CreatedAt,
+                r.Images.Select(img => img.Url).ToList()
+            )).ToList();
 
-    return new MarkerDetailDto(
-        detail.Marker.Id,
-        detail.Marker.Title,
-        detail.Marker.Description,
-        detail.Marker.Images.Select(i => i.Url).ToList(),
-        detail.Marker.Category,
-        detail.Marker.Status,
-        detail.Marker.CreatedByUserId,
-        detail.Creator?.Name ?? "Аноним",
-        detail.Creator?.AvatarUrl,
-        detail.Marker.Rating,
-        detail.UserVote,
-        detail.Marker.CreatedAt,
-        detail.Marker.UpdatedAt,
-        detail.Marker.ScheduledAt,
-        detail.Marker.ExpiresAt,
-        resolutionDtos
-    );
-}
+        return new MarkerDetailDto(
+            detail.Marker.Id,
+            detail.Marker.Title,
+            detail.Marker.Description,
+            detail.Marker.Images.Select(i => i.Url).ToList(),
+            detail.Marker.Category,
+            detail.Marker.Status,
+            detail.Marker.CreatedByUserId,
+            detail.Creator?.Name ?? "Аноним",
+            detail.Creator?.AvatarUrl,
+            detail.Marker.Rating,
+            detail.UserVote,
+            detail.Marker.CreatedAt,
+            detail.Marker.UpdatedAt,
+            detail.Marker.ScheduledAt, 
+            detail.Marker.ExpiresAt,    
+            detail.Marker.IsOfficial,   
+            resolutionDtos
+        );
+    }
 
 public async Task ChangeStatusAsync(Guid id, ChangeStatusDto dto, Guid userId)
 {

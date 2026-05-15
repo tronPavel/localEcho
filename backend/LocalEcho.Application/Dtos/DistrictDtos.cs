@@ -29,5 +29,6 @@ public record DistrictDetailDto(
 public record CreateDistrictDto(
     string Name,
     string? Description,
+    Guid CityId,
     List<CoordinateDto> Geometry 
 );

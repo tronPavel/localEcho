@@ -19,43 +19,40 @@ public class AuthService : IAuthService
     private readonly ITokenRepository _tokenRepository;
     private readonly IDistrictRepository _districtRepository;
     private readonly IConfiguration _configuration;
+    private readonly ICityRepository _cityRepository;
 
     public AuthService(
         IUserRepository userRepository,
         IIdentityRepository identityRepository, 
         ITokenRepository tokenRepository,
         IDistrictRepository districtRepository,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ICityRepository cityRepository)
     {
         _userRepository = userRepository;
         _identityRepository = identityRepository;
         _tokenRepository = tokenRepository;
         _districtRepository = districtRepository;
         _configuration = configuration;
+        _cityRepository =  cityRepository;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
     {
         var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
         if (existingUser != null) 
-            throw new BadRequestException("Пользователь с таким Email уже зарегистрирован.");
-
-        if (dto.DistrictId.HasValue)
-        {
-            var districtExists = await _districtRepository.GetByIdAsync(dto.DistrictId.Value);
-            if (districtExists == null) throw new KeyNotFoundException("Указанный район не существует.");
-        }
+            throw new BadRequestException("Email уже занят.");
 
         var user = new ApplicationUser
         {
             UserName = dto.Email,
             Email = dto.Email,
             Name = dto.Name,
+            CityId = dto.CityId,
             DistrictId = dto.DistrictId,
-            HomeAddress = dto.HomeAddress,
-            HomeLocation = null,
-            CreatedAt = DateTime.UtcNow,
-            Points = 0
+            HomeAddress = dto.HomeAddress, 
+            HomeLocation = null,          
+            CreatedAt = DateTime.UtcNow
         };
 
         await _identityRepository.CreateUserAsync(user, dto.Password);
@@ -98,6 +95,7 @@ public class AuthService : IAuthService
         }
     }
     
+
     private async Task<AuthResponseDto> GenerateTokensAsync(ApplicationUser user)
     {
         var userRoles = await _identityRepository.GetRolesAsync(user);
@@ -107,9 +105,10 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.Name, user.Name ?? "User"), 
+            new("CityId", user.CityId?.ToString() ?? ""),
             new("DistrictId", user.DistrictId?.ToString() ?? ""),
         };
-        
+    
         foreach (var role in userRoles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         var token = GenerateJwtToken(claims);
@@ -117,18 +116,30 @@ public class AuthService : IAuthService
 
         await _tokenRepository.SetRefreshTokenAsync(user, refreshToken);
 
-        double? lat = user.HomeLocation?.Y;
-        double? lng = user.HomeLocation?.X;
+        string? cityName = user.CityId.HasValue 
+            ? (await _cityRepository.GetByIdAsync(user.CityId.Value))?.Name 
+            : null;
 
-        var districtName = user.DistrictId.HasValue 
+        string? districtName = user.DistrictId.HasValue 
             ? await _districtRepository.GetNameByIdAsync(user.DistrictId.Value) 
             : null;
 
         return new AuthResponseDto(
-            token, refreshToken, DateTime.UtcNow.AddMinutes(GetTokenLifetime()),
-            user.Id.ToString(), user.Email!, user.Name ?? "User", user.AvatarUrl,
-            user.DistrictId, districtName, user.Points, userRoles.ToList(),
-            lat, lng 
+            Token: token, 
+            RefreshToken: refreshToken, 
+            Expires: DateTime.UtcNow.AddMinutes(GetTokenLifetime()),
+            UserId: user.Id.ToString(), 
+            Email: user.Email!, 
+            Name: user.Name ?? "User", 
+            AvatarUrl: user.AvatarUrl,
+            CityId: user.CityId,
+            CityName: cityName,
+            DistrictId: user.DistrictId, 
+            DistrictName: districtName, 
+            Points: user.Points, 
+            Roles: userRoles.ToList(),
+            Latitude: user.HomeLocation?.Y, 
+            Longitude: user.HomeLocation?.X 
         );
     }
 

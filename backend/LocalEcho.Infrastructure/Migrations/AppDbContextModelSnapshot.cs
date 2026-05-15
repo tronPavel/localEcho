@@ -24,6 +24,30 @@ namespace LocalEcho.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LocalEcho.Core.Entities.City", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Polygon>("Boundaries")
+                        .IsRequired()
+                        .HasColumnType("geometry(Polygon, 4326)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Boundaries");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Boundaries"), "GIST");
+
+                    b.ToTable("Cities");
+                });
+
             modelBuilder.Entity("LocalEcho.Core.Entities.District", b =>
                 {
                     b.Property<Guid>("Id")
@@ -33,6 +57,9 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.Property<Polygon>("Boundaries")
                         .IsRequired()
                         .HasColumnType("geometry(Polygon, 4326)");
+
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -55,6 +82,8 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.HasIndex("Boundaries");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Boundaries"), "GIST");
+
+                    b.HasIndex("CityId");
 
                     b.ToTable("Districts");
                 });
@@ -100,6 +129,13 @@ namespace LocalEcho.Infrastructure.Migrations
 
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("text");
+
+                    b.Property<string>("Bio")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -191,6 +227,9 @@ namespace LocalEcho.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -208,6 +247,11 @@ namespace LocalEcho.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsHidden")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsOfficial")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
@@ -237,6 +281,8 @@ namespace LocalEcho.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CityId");
 
                     b.HasIndex("CreatedByUserId");
 
@@ -454,6 +500,17 @@ namespace LocalEcho.Infrastructure.Migrations
                     b.HasIndex("ReporterId");
 
                     b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("LocalEcho.Core.Entities.District", b =>
+                {
+                    b.HasOne("LocalEcho.Core.Entities.City", "City")
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
                 });
 
             modelBuilder.Entity("LocalEcho.Core.Entities.Marker", b =>

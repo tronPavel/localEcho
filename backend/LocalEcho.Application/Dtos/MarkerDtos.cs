@@ -11,7 +11,8 @@ public record CreateMarkerDto(
     string? Description,
     List<IFormFile>? ImageFiles,
     List<CoordinateDto> Points, 
-    DateTime? ScheduledAt
+    DateTime? StartDate, 
+    DateTime? EndDate 
 );
 
 public record UpdateMarkerDto(
@@ -28,7 +29,8 @@ public record MarkerMapDto(
     MarkerStatus Status,
     string GeometryType, 
     List<CoordinateDto> Coordinates, 
-    CoordinateDto Centroid
+    CoordinateDto Centroid,
+    bool IsOfficial 
 );
 
 public record GetMarkersQueryParams(
@@ -56,6 +58,7 @@ public record MarkerDetailDto(
     DateTime? UpdatedAt,
     DateTime? ScheduledAt, 
     DateTime? ExpiresAt,
+    bool IsOfficial, 
     List<MarkerResolutionDto> Resolutions 
 );
 
@@ -85,6 +88,7 @@ public record MarkerWorkItemDto(
 );
 
 public record WorkItemsQueryParams(
+    Guid? CityId, 
     Guid? DistrictId,
     MarkerStatus? Status,
     MarkerCategory? Category, 

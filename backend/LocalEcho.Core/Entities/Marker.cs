@@ -14,6 +14,8 @@ public class Marker
     public MarkerStatus Status { get; private set; }
     public Guid CreatedByUserId { get; private set; }
     public Guid? DistrictId { get; private set; }
+    public Guid? CityId { get; private set; } 
+    public bool IsOfficial { get; private set; } 
     public DateTime CreatedAt { get; private set; }
     public DateTime? ScheduledAt { get; private set; } 
     public DateTime? ExpiresAt { get; private set; } 
@@ -39,7 +41,7 @@ public class Marker
 
     private Marker() { }
 
-    private Marker(string title, Geometry location, MarkerCategory category, Guid createdByUserId, Guid? districtId, string? description, DateTime? scheduledAt)
+    private Marker(string title, Geometry location, MarkerCategory category, Guid createdByUserId, Guid? districtId, Guid? cityId, string? description,    DateTime? scheduledAt, DateTime? expiresAt, bool isOfficial)
     {
         Id = Guid.NewGuid();
         Title = title.Trim();
@@ -47,10 +49,13 @@ public class Marker
         Category = category;
         CreatedByUserId = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("Creator required");
         DistrictId = districtId;
+        CityId = cityId;
         Description = description?.Length > 2000 ? throw new ArgumentException("Description too long") : description?.Trim();
         CreatedAt = DateTime.UtcNow;
         Rating = 0;
-        ScheduledAt = scheduledAt;
+        ScheduledAt = scheduledAt; 
+        ExpiresAt = expiresAt;    
+        IsOfficial = isOfficial;
         Status = category switch
         {
             MarkerCategory.Event => MarkerStatus.Upcoming,
@@ -66,12 +71,17 @@ public class Marker
     }
 
     public static Marker Create(string title, Geometry location, MarkerCategory category, 
-        Guid createdByUserId, Guid? districtId, string? description = null, DateTime? scheduledAt = null)
+        Guid createdByUserId, Guid? districtId, Guid? cityId,  bool isOfficial, string? description = null,  DateTime? startDate = null, DateTime? endDate = null)
     {
-        if (category == MarkerCategory.Event && !scheduledAt.HasValue)
-            throw new ArgumentException("Для события необходимо указать дату и время.");
+        if (category == MarkerCategory.Event && !startDate.HasValue)
+            throw new ArgumentException("Для события необходимо указать дату начала.");
 
-        return new Marker(title, location, category, createdByUserId, districtId, description, scheduledAt);
+        var finalEndDate = endDate;
+        if (category == MarkerCategory.Announcement && !endDate.HasValue)
+            finalEndDate = DateTime.UtcNow.AddDays(30);
+
+        return new Marker(title, location, category, createdByUserId, 
+            districtId, cityId, description, startDate, finalEndDate, isOfficial);
     }
 
     public void SetExpiresAt(DateTime date) => ExpiresAt = date;
@@ -102,4 +112,7 @@ public class Marker
         Resolutions.Add(resolution);
         UpdatedAt = DateTime.UtcNow;
     }
+    public void SetOfficial(bool isOfficial) => IsOfficial = isOfficial;
+
+    public void SetCity(Guid? cityId) => CityId = cityId;
 }

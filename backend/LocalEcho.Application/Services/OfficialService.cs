@@ -14,6 +14,7 @@ public class OfficialService : IOfficialService
     public async Task<IEnumerable<MarkerWorkItemDto>> GetQueueAsync(WorkItemsQueryParams query, CancellationToken ct)
     {
         var filter = new MarkerWorkFilter(
+            query.CityId,
             query.DistrictId,
             query.Status,
             query.Category,

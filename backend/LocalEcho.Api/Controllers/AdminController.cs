@@ -1,3 +1,4 @@
+using LocalEcho.Aplication.Interfaces;
 using LocalEcho.Application.Dtos;
 using LocalEcho.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +12,14 @@ public class AdminController : ControllerBase
 {
     private readonly IDistrictService _districtService;
     private readonly IUserService _userService;
+    private readonly ICityService _cityService;
+    
 
-    public AdminController(IDistrictService districtService, IUserService userService)
+    public AdminController(IDistrictService districtService, IUserService userService, ICityService cityService)
     {
         _districtService = districtService;
         _userService = userService;
+        _cityService = cityService;
     }
     
     [HttpGet("users/search")]
@@ -54,6 +58,19 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> DeleteDistrict(Guid id)
     {
         await _districtService.DeleteAsync(id);
+        return NoContent();
+    }
+    [HttpPost("cities")]
+    public async Task<IActionResult> CreateCity([FromBody] CreateCityDto dto)
+    {
+        var id = await _cityService.CreateAsync(dto);
+        return CreatedAtAction(nameof(CreateCity), new { id }, dto);
+    }
+
+    [HttpPut("cities/{id:guid}")]
+    public async Task<IActionResult> UpdateCity(Guid id, [FromBody] CreateCityDto dto)
+    {
+        await _cityService.UpdateAsync(id, dto);
         return NoContent();
     }
 }

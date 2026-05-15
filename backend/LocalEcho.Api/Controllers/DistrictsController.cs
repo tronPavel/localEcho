@@ -9,12 +9,17 @@ namespace LocalEcho.API.Controllers;
 public class DistrictsController : ControllerBase
 {
     private readonly IDistrictService _service;
-
     public DistrictsController(IDistrictService service) => _service = service;
 
     [HttpGet] 
-    public async Task<IActionResult> GetList() 
-        => Ok(await _service.GetListAsync());
+    public async Task<IActionResult> GetList([FromQuery] Guid? cityId) 
+    {
+        if (cityId.HasValue)
+        {
+            return Ok(await _service.GetByCityAsync(cityId.Value));
+        }
+        return Ok(await _service.GetListAsync());
+    }
 
     [HttpGet("map")] 
     public async Task<IActionResult> GetForMap() 

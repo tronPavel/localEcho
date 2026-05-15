@@ -23,7 +23,7 @@ public class MarkerRepository : IMarkerRepository
     {
         return await _context.Markers
             .Include(m => m.Images)
-            .Include(m => m.Resolutions) // Заменили на Many
+            .Include(m => m.Resolutions) 
             .ThenInclude(r => r.Images)
             .Include(m => m.Resolutions)
             .ThenInclude(r => r.ResolvedByUser) 
@@ -31,8 +31,6 @@ public class MarkerRepository : IMarkerRepository
     }
     public async Task<Marker?> GetByIdBaseAsync(Guid id, CancellationToken ct = default)
     {
-        // Получаем метку БЕЗ Include (только основные поля), 
-        // но с отслеживанием (Tracking) для редактирования
         return await _context.Markers
             .FirstOrDefaultAsync(m => m.Id == id, ct);
     }
@@ -41,7 +39,7 @@ public class MarkerRepository : IMarkerRepository
         return await _context.Markers
             .AsNoTracking()
             .Include(m => m.Images)
-            .Include(m => m.Resolutions) // Заменили на Many
+            .Include(m => m.Resolutions) 
             .ThenInclude(r => r.Images)
             .Include(m => m.Resolutions)
             .ThenInclude(r => r.ResolvedByUser)
@@ -122,22 +120,28 @@ public class MarkerRepository : IMarkerRepository
     {
         var query = _context.Markers.AsNoTracking().Where(m => !m.IsHidden);
 
-        query = query.Where(m => m.Category == MarkerCategory.Issue || m.Category == MarkerCategory.Suggestion);
+        if (filter.Category.HasValue)
+            query = query.Where(m => m.Category == filter.Category.Value);
+        else
+            query = query.Where(m => m.Category == MarkerCategory.Issue || m.Category == MarkerCategory.Suggestion);
 
-        if (filter.DistrictId.HasValue) 
-            query = query.Where(m => m.DistrictId == filter.DistrictId.Value);
-
-        if (filter.Status.HasValue) 
+        if (filter.Status.HasValue)
             query = query.Where(m => m.Status == filter.Status.Value);
 
+        if (filter.DistrictId.HasValue)
+            query = query.Where(m => m.DistrictId == filter.DistrictId.Value);
+        else if (filter.CityId.HasValue) 
+            query = query.Where(m => m.CityId == filter.CityId.Value);
+
         return await query
-            .OrderByDescending(m => m.CreatedAt)
+            .OrderByDescending(m => m.Rating)
+            .ThenByDescending(m => m.CreatedAt)
             .Select(m => new MarkerWorkTask(
                 m.Id,
                 m.Title,
                 m.Category.ToString(),
                 m.Status.ToString(),
-                m.Creator != null ? m.Creator.Name ?? "Аноним" : "Аноним",
+                m.Creator != null ? (m.Creator.Name ?? "Аноним") : "Аноним",
                 _context.Districts.Where(d => d.Id == m.DistrictId).Select(d => d.Name).FirstOrDefault() ?? "Вне района",
                 m.CreatedAt,
                 m.Rating

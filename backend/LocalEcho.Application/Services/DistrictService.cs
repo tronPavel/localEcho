@@ -69,18 +69,22 @@ public class DistrictService : IDistrictService
         return new DistrictBriefDto(district.Id, district.Name);
     }
 
-
+    public async Task<IEnumerable<DistrictBriefDto>> GetByCityAsync(Guid cityId)
+    {
+        var districts = await _repository.GetByCityIdAsync(cityId);
+        return districts.Select(d => new DistrictBriefDto(d.Id, d.Name));
+    }
     public async Task<Guid> CreateAsync(CreateDistrictDto dto)
     {
         var polygon = MapToPolygon(dto.Geometry);
 
         if (await _repository.IsOverlappingOtherDistrictsAsync(Guid.Empty, polygon))
         {
-            throw new InvalidOperationException("Границы нового района пересекаются с существующими.");
+            throw new InvalidOperationException("Границы пересекаются с существующими районами.");
         }
 
-        var district = District.Create(dto.Name, polygon, dto.Description);
-        
+        var district = District.Create(dto.Name, polygon, dto.CityId, dto.Description);
+    
         await _repository.AddAsync(district);
         await _unitOfWork.SaveChangesAsync();
         return district.Id;

@@ -9,13 +9,14 @@ public class District
     public string? Description { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; }
-    
+    public Guid CityId { get; private set; } 
+    public virtual City City { get; private set; } = null!;
     public Polygon Boundaries { get; private set; } = null!;
     public Point Centroid => Boundaries.Centroid;
 
     private District() { } 
 
-    public static District Create(string name, Polygon boundaries, string? description = null)
+    public static District Create(string name, Polygon boundaries, Guid cityId,string? description = null)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Имя района обязательно");
         if (boundaries == null || !boundaries.IsValid) throw new ArgumentException("Неверная геометрия");
@@ -26,6 +27,7 @@ public class District
             Name = name.Trim(),
             Description = description?.Trim(),
             Boundaries = boundaries,
+            CityId =cityId,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };

@@ -7,6 +7,7 @@ public interface IDistrictRepository
 {
     Task<District?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IEnumerable<District>> GetAllActiveAsync(CancellationToken ct = default);
+    Task<IEnumerable<District>> GetByCityIdAsync(Guid cityId);
     Task<string?> GetNameByIdAsync(Guid id, CancellationToken ct = default);
     Task AddAsync(District district, CancellationToken ct = default);
     Task<District?> GetDistrictByCoordinatesAsync(Point p, CancellationToken ct = default);

@@ -7,7 +7,7 @@ using NetTopologySuite.Geometries;
 
 namespace LocalEcho.Infrastructure.Repositories;
 
-public class DistrictRepository : IDistrictRepository
+public class  DistrictRepository : IDistrictRepository
 {
     private readonly AppDbContext _context;
 
@@ -66,5 +66,12 @@ public class DistrictRepository : IDistrictRepository
             NewSuggestionsCount: rawStats.Where(x => x.Category == MarkerCategory.Suggestion && x.Status == MarkerStatus.Review).Sum(x => x.Count),
             CategoryCounts: rawStats.GroupBy(x => x.Category.ToString()).ToDictionary(g => g.Key, g => g.Sum(x => x.Count))
         );
+    }
+    public async Task<IEnumerable<District>> GetByCityIdAsync(Guid cityId)
+    {
+        return await _context.Districts
+            .AsNoTracking()
+            .Where(d => d.CityId == cityId && d.IsActive)
+            .ToListAsync();
     }
 }

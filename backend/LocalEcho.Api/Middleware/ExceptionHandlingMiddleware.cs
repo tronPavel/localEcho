@@ -45,12 +45,12 @@ public class ExceptionHandlingMiddleware
                 detail = exception.Message;
                 break;
             case SecurityTokenException:
-                statusCode = (int)HttpStatusCode.Unauthorized; // 401
+                statusCode = (int)HttpStatusCode.Unauthorized; 
                 title = "Unauthorized";
                 detail = "Недействительный или поврежденный токен авторизации.";
                 break;
             case UnauthorizedAccessException:
-                statusCode = (int)HttpStatusCode.Forbidden; // 403
+                statusCode = (int)HttpStatusCode.Forbidden;
                 title = "Forbidden";
                 detail = "У вас нет прав для выполнения этого действия над ресурсом.";
                 break;
